@@ -9,15 +9,18 @@ frontend:
   phases:
     preBuild:
       commands:
-        # Install Flutter
-        - wget https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.13.0-stable.tar.xz
-        - tar xf flutter_linux_3.13.0-stable.tar.xz
+        # Install Flutter 3.24.5
+        - wget https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.24.5-stable.tar.xz
+        - tar xf flutter_linux_3.24.5-stable.tar.xz
         - export PATH="$PATH:`pwd`/flutter/bin"
+        # Verify Flutter installation
         - flutter doctor
+        # Clean and fetch dependencies
         - flutter clean
         - flutter pub get
     build:
       commands:
+        # Build the Flutter web app
         - flutter build web
   artifacts:
     baseDirectory: build/web
