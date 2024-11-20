@@ -9,6 +9,11 @@ frontend:
   phases:
     preBuild:
       commands:
+        # Install Flutter
+        - wget https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.13.0-stable.tar.xz
+        - tar xf flutter_linux_3.13.0-stable.tar.xz
+        - export PATH="$PATH:`pwd`/flutter/bin"
+        - flutter doctor
         - flutter clean
         - flutter pub get
     build:
@@ -21,3 +26,4 @@ frontend:
   cache:
     paths:
       - flutter/.pub-cache
+      - node_modules
