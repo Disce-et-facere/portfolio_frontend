@@ -45,5 +45,5 @@ app.*.map.json
 # amplify
 node_modules
 .amplify
-amplify_outputs*
+!lib/amplify_outputs.dart
 amplifyconfiguration*
