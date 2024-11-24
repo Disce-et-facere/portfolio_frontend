@@ -3,8 +3,8 @@ import '../settings/settings_controller.dart';
 import '../widgets/toolbar.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 
-class LoggedInPage extends StatefulWidget {
-  const LoggedInPage({
+class Dashboard extends StatefulWidget {
+  const Dashboard({
     super.key,
     required this.settingsController,
   });
@@ -12,10 +12,10 @@ class LoggedInPage extends StatefulWidget {
   final SettingsController settingsController;
 
   @override
-  State<LoggedInPage> createState() => _LoggedInPageState();
+  State<Dashboard> createState() => _LoggedInPageState();
 }
 
-class _LoggedInPageState extends State<LoggedInPage> {
+class _LoggedInPageState extends State<Dashboard> {
   String? userEmail;
   bool isLoading = true;
   List<Device> devices = [

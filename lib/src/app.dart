@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:amplify_authenticator/amplify_authenticator.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
-import 'loggedin/loggedin_page.dart';
+import 'dashboard/dashboard.dart';
 import 'settings/settings_controller.dart';
 
 class MyApp extends StatelessWidget {
@@ -12,13 +12,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: settingsController, // Listen for changes in settingsController
+      listenable: settingsController,
       builder: (BuildContext context, Widget? child) {
         return Authenticator(
           child: MaterialApp(
             theme: ThemeData.light(),
             darkTheme: ThemeData.dark(),
-            themeMode: settingsController.themeMode, // Use dynamic themeMode
+            themeMode: settingsController.themeMode,
             builder: Authenticator.builder(),
             home: AuthWrapper(settingsController: settingsController),
           ),
@@ -76,7 +76,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
     if (isAuthenticated) {
       // User is authenticated, show the logged-in page
-      return LoggedInPage(settingsController: widget.settingsController);
+      return Dashboard(settingsController: widget.settingsController);
     }
 
     // User is not authenticated, show the Authenticator login UI
