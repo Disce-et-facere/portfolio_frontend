@@ -75,7 +75,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
 
     if (isAuthenticated) {
-      // User is authenticated, show the logged-in page
+      // User is authenticated, show the Dashboard
       return Dashboard(settingsController: widget.settingsController);
     }
 
