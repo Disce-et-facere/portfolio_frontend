@@ -28,15 +28,15 @@ const amplifyConfig = r'''{
   "data": {
     "url": "https://zxgkn4sm5zfpzgy63ptqe5cymi.appsync-api.eu-central-1.amazonaws.com/graphql",
     "aws_region": "eu-central-1",
-    "default_authorization_type": "AWS_IAM",
+    "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
     "authorization_types": [
-      "AMAZON_COGNITO_USER_POOLS"
+      "AWS_IAM"
     ],
     "model_introspection": {
       "version": 1,
       "models": {
-        "Todo": {
-          "name": "Todo",
+        "Device": {
+          "name": "Device",
           "fields": {
             "id": {
               "name": "id",
@@ -45,8 +45,8 @@ const amplifyConfig = r'''{
               "isRequired": true,
               "attributes": []
             },
-            "content": {
-              "name": "content",
+            "name": {
+              "name": "name",
               "isArray": false,
               "type": "String",
               "isRequired": false,
@@ -70,7 +70,7 @@ const amplifyConfig = r'''{
             }
           },
           "syncable": true,
-          "pluralName": "Todos",
+          "pluralName": "Devices",
           "attributes": [
             {
               "type": "model",
@@ -81,8 +81,10 @@ const amplifyConfig = r'''{
               "properties": {
                 "rules": [
                   {
-                    "allow": "public",
-                    "provider": "iam",
+                    "provider": "userPools",
+                    "ownerField": "owner",
+                    "allow": "owner",
+                    "identityClaim": "cognito:username",
                     "operations": [
                       "create",
                       "update",
