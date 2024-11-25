@@ -68,7 +68,7 @@ class Toolbar extends StatelessWidget implements PreferredSizeWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const DeviceFormScreen(),
+                builder: (context) => const AddDeviceScreen(),
               ),
             );
           },

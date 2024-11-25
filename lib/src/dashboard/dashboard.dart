@@ -99,7 +99,7 @@ class _LoggedInPageState extends State<Dashboard> {
 
   @override
   Widget build(BuildContext context) {
-    final messages = [
+    final messages = [ // dummy messages
       Message(content: 'Low battery on Device 1', type: MessageType.warning),
       Message(content: 'Temperature too high on Device 2', type: MessageType.alert),
       Message(content: 'Device 3 disconnected', type: MessageType.alert),
@@ -109,7 +109,7 @@ class _LoggedInPageState extends State<Dashboard> {
     return Scaffold(
       appBar: Toolbar(
         username: userEmail ?? 'Loading...',
-        siteName: 'DataGrid',
+        siteName: 'D-Monitor',
         settingsController: widget.settingsController,
         onSignOut: _signOut,
       ),
