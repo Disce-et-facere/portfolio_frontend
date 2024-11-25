@@ -14,12 +14,11 @@ dependencies:
   amplify_auth_cognito: ^2.0.0
   amplify_authenticator: ^2.0.0
   amplify_api: ^2.5.0
-   http: ^1.2.2
+  http: ^1.2.2
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  carousel_slider: ^5.0.0
 
 dev_dependencies:
   flutter_test:
