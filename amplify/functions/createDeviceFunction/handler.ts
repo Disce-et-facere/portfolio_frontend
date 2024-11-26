@@ -4,9 +4,6 @@ import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
 const iot = new AWS.Iot();
 const iotData = new AWS.IotData({ endpoint: process.env.IOT_ENDPOINT });
-const dynamoDB = new AWS.DynamoDB.DocumentClient();
-
-const METADATA_TABLE = process.env.METADATA_TABLE as string;
 
 // AWS IoT CA Certificate URL
 const CA_CERT_URL = 'https://www.amazontrust.com/repository/AmazonRootCA1.pem';
@@ -15,7 +12,7 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-    const { deviceName, alias, sensors } = JSON.parse(event.body || '{}');
+    const { deviceName } = JSON.parse(event.body || '{}');
 
     if (!deviceName) {
       return {
@@ -32,7 +29,15 @@ export const handler = async (
     const certResponse = await iot.createKeysAndCertificate({ setAsActive: true }).promise();
     const { certificateArn, certificatePem, keyPair } = certResponse;
 
+    if (!keyPair || !keyPair.PrivateKey || !keyPair.PublicKey) {
+      throw new Error('Key pair generation failed');
+    }
+
     // Step 3: Attach Certificate to Thing
+    if (!certificateArn) {
+      throw new Error('Certificate ARN is required');
+    }
+
     await iot
       .attachThingPrincipal({
         thingName: deviceName,
@@ -55,27 +60,11 @@ export const handler = async (
       })
       .promise();
 
-    // Step 5: Store Metadata in DynamoDB
-    const metadata = {
-      thingName: deviceName,
-      alias: alias || null,
-      sensors: sensors || [],
-      certificateArn,
-      createdAt: new Date().toISOString(),
-    };
-
-    await dynamoDB
-      .put({
-        TableName: METADATA_TABLE,
-        Item: metadata,
-      })
-      .promise();
-
-    // Step 6: Retrieve CA Certificate
+    // Step 5: Retrieve CA Certificate
     const caCertResponse = await fetch(CA_CERT_URL);
     const caCert = await caCertResponse.text();
 
-    // Step 7: Return IoT endpoint, certificates, and shadow details
+    // Step 6: Return IoT endpoint, certificates, and shadow details
     const iotEndpoint = (await iot.describeEndpoint({ endpointType: 'iot:Data-ATS' }).promise())
       .endpointAddress;
 
