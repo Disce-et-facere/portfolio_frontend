@@ -26,6 +26,7 @@ frontend:
     baseDirectory: build/web
     files:
       - '**/*'
+      - 'lib/amplify_output.dart' # Ensure amplify_output.dart is included in the build artifacts
   cache:
     paths:
       - flutter/.pub-cache
