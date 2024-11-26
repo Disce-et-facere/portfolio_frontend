@@ -1,5 +1,5 @@
-import AWS from 'aws-sdk';
-import fetch from 'node-fetch'; // Add fetch for HTTP requests
+const AWS = require('aws-sdk'); // Use require for Lambda's pre-installed SDK
+const fetch = require('node-fetch'); // Still need to bundle node-fetch
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
 const iot = new AWS.Iot();
