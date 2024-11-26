@@ -1,9 +1,9 @@
 const amplifyConfig = r'''{
   "auth": {
-    "user_pool_id": "eu-central-1_IuwaXNB07",
+    "user_pool_id": "eu-central-1_EQYSEuJGM",
     "aws_region": "eu-central-1",
-    "user_pool_client_id": "5ep32hu0f60p4utcaljb4l3651",
-    "identity_pool_id": "eu-central-1:a6f60a12-c0ea-4456-84e8-b1926e0d10a0",
+    "user_pool_client_id": "26j4bbns1tp1v0mo1mpui4o4j2",
+    "identity_pool_id": "eu-central-1:10e20f2a-6874-4cc7-8211-a39ec72b5afb",
     "mfa_methods": [],
     "standard_required_attributes": [
       "email"
@@ -26,30 +26,46 @@ const amplifyConfig = r'''{
     "unauthenticated_identities_enabled": true
   },
   "data": {
-    "url": "https://zxgkn4sm5zfpzgy63ptqe5cymi.appsync-api.eu-central-1.amazonaws.com/graphql",
+    "url": "https://4xqp2shlb5cdtlr7paoqvb5xfy.appsync-api.eu-central-1.amazonaws.com/graphql",
     "aws_region": "eu-central-1",
+    "api_key": "da2-ty7yocqojnghvcabvjn7fng74a",
     "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
     "authorization_types": [
+      "API_KEY",
       "AWS_IAM"
     ],
     "model_introspection": {
       "version": 1,
       "models": {
-        "Device": {
-          "name": "Device",
+        "telemetry": {
+          "name": "telemetry",
           "fields": {
-            "id": {
-              "name": "id",
+            "device_id": {
+              "name": "device_id",
               "isArray": false,
-              "type": "ID",
+              "type": "String",
               "isRequired": true,
               "attributes": []
             },
-            "name": {
-              "name": "name",
+            "timestamp": {
+              "name": "timestamp",
+              "isArray": false,
+              "type": "AWSTimestamp",
+              "isRequired": true,
+              "attributes": []
+            },
+            "ownerID": {
+              "name": "ownerID",
               "isArray": false,
               "type": "String",
-              "isRequired": false,
+              "isRequired": true,
+              "attributes": []
+            },
+            "data": {
+              "name": "data",
+              "isArray": false,
+              "type": "AWSJSON",
+              "isRequired": true,
               "attributes": []
             },
             "createdAt": {
@@ -70,21 +86,38 @@ const amplifyConfig = r'''{
             }
           },
           "syncable": true,
-          "pluralName": "Devices",
+          "pluralName": "telemetries",
           "attributes": [
             {
               "type": "model",
               "properties": {}
             },
             {
+              "type": "key",
+              "properties": {
+                "fields": [
+                  "device_id",
+                  "timestamp"
+                ]
+              }
+            },
+            {
               "type": "auth",
               "properties": {
                 "rules": [
                   {
+                    "allow": "private",
                     "provider": "userPools",
-                    "ownerField": "owner",
-                    "allow": "owner",
-                    "identityClaim": "cognito:username",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete",
+                      "read"
+                    ]
+                  },
+                  {
+                    "allow": "public",
+                    "provider": "apiKey",
                     "operations": [
                       "create",
                       "update",
@@ -97,14 +130,50 @@ const amplifyConfig = r'''{
             }
           ],
           "primaryKeyInfo": {
-            "isCustomPrimaryKey": false,
-            "primaryKeyFieldName": "id",
-            "sortKeyFieldNames": []
+            "isCustomPrimaryKey": true,
+            "primaryKeyFieldName": "device_id",
+            "sortKeyFieldNames": [
+              "timestamp"
+            ]
           }
         }
       },
       "enums": {},
-      "nonModels": {}
+      "nonModels": {},
+      "mutations": {
+        "addTelemetry": {
+          "name": "addTelemetry",
+          "isArray": false,
+          "type": "AWSJSON",
+          "isRequired": false,
+          "arguments": {
+            "device_id": {
+              "name": "device_id",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "timestamp": {
+              "name": "timestamp",
+              "isArray": false,
+              "type": "AWSTimestamp",
+              "isRequired": true
+            },
+            "ownerID": {
+              "name": "ownerID",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            },
+            "data": {
+              "name": "data",
+              "isArray": false,
+              "type": "AWSJSON",
+              "isRequired": true
+            }
+          }
+        }
+      }
     }
   },
   "version": "1.3"
