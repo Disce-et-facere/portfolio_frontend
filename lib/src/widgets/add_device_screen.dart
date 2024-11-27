@@ -38,7 +38,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
     setState(() {
       _isLoading = true;
     });
-    // https://jmlkx0hula.execute-api.eu-central-1.amazonaws.com/addDevice
+    
     try {
       final response = await http.post(
         Uri.parse(apiUrl),
@@ -65,7 +65,10 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error adding device: $e')),
+          SnackBar(
+            content: Text('Error adding device: $e'),
+            duration: Duration(seconds: 15), // Set the duration here
+          ),
         );
       }
     } finally {
