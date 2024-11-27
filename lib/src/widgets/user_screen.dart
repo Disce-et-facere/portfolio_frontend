@@ -23,10 +23,11 @@ class _UserScreenState extends State<UserScreen> {
   Future<void> _loadOwnerID() async {
     try {
       final attributes = await Amplify.Auth.fetchUserAttributes();
+      // Look for "custom:OwnerID" (case-sensitive and prefixed with "custom:")
       final ownerIDAttribute = attributes.firstWhere(
-        (attr) => attr.userAttributeKey == const CognitoUserAttributeKey.custom('ownerID'),
+        (attr) => attr.userAttributeKey == CognitoUserAttributeKey.custom('OwnerID'),
         orElse: () => const AuthUserAttribute(
-          userAttributeKey: CognitoUserAttributeKey.custom('ownerID'),
+          userAttributeKey: CognitoUserAttributeKey.custom('OwnerID'),
           value: '',
         ),
       );
@@ -39,36 +40,36 @@ class _UserScreenState extends State<UserScreen> {
     }
   }
 
-Future<void> _saveOwnerID() async {
-  final newOwnerID = _ownerIDController.text.trim();
-  if (newOwnerID.isNotEmpty) {
-    try {
-      await Amplify.Auth.updateUserAttribute(
-        userAttributeKey: const CognitoUserAttributeKey.custom('ownerID'),
-        value: newOwnerID,
-      );
-      debugPrint('OwnerID updated to: $newOwnerID');
+  Future<void> _saveOwnerID() async {
+    final newOwnerID = _ownerIDController.text.trim();
+    if (newOwnerID.isNotEmpty) {
+      try {
+        await Amplify.Auth.updateUserAttribute(
+          userAttributeKey: CognitoUserAttributeKey.custom('OwnerID'), // Correct key
+          value: newOwnerID,
+        );
+        debugPrint('OwnerID updated to: $newOwnerID');
 
-      if (!mounted) return; // Ensure the widget is still mounted
+        if (!mounted) return; // Ensure the widget is still mounted
 
-      setState(() {
-        _ownerID = newOwnerID;
-      });
+        setState(() {
+          _ownerID = newOwnerID;
+        });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Owner ID updated successfully')),
-      );
-    } catch (e) {
-      debugPrint('Error updating OwnerID: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Owner ID updated successfully')),
+        );
+      } catch (e) {
+        debugPrint('Error updating OwnerID: $e');
 
-      if (!mounted) return; // Ensure the widget is still mounted
+        if (!mounted) return; // Ensure the widget is still mounted
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating Owner ID: $e')),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating Owner ID: $e')),
+        );
+      }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +92,7 @@ Future<void> _saveOwnerID() async {
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
-            ), 
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: _ownerIDController,

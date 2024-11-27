@@ -15,6 +15,9 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   final List<Sensor> _sensors = [];
   bool _isLoading = false;
 
+  // Load the API URL directly
+  final String apiUrl = const String.fromEnvironment('ADD_DEVICE_API_URL', defaultValue: 'https://default-api-url.com');
+
   String? thingArn;
   String? iotEndpoint;
   String? certificatePem;
@@ -35,12 +38,10 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
     setState(() {
       _isLoading = true;
     });
-
+    // https://jmlkx0hula.execute-api.eu-central-1.amazonaws.com/addDevice
     try {
-      const apiUrl = '<Your API Gateway URL>';
-
       final response = await http.post(
-        Uri.parse('$apiUrl/devices'),
+        Uri.parse(''),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'deviceName': deviceName,
