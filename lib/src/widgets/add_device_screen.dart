@@ -41,7 +41,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
     // https://jmlkx0hula.execute-api.eu-central-1.amazonaws.com/addDevice
     try {
       final response = await http.post(
-        Uri.parse(''),
+        Uri.parse(apiUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'deviceName': deviceName,
