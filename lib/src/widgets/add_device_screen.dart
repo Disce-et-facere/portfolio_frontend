@@ -44,7 +44,9 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Sending POST request with body: $requestBody'),
+          content: Text(
+            'Sending POST request to $apiUrl with body: $requestBody',
+          ),
           duration: const Duration(seconds: 10),
         ),
       );
