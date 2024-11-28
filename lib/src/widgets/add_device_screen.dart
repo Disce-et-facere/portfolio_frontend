@@ -12,7 +12,6 @@ class AddDeviceScreen extends StatefulWidget {
 class _AddDeviceScreenState extends State<AddDeviceScreen> {
   final TextEditingController _deviceNameController = TextEditingController();
   final TextEditingController _aliasController = TextEditingController();
-  //final List<Sensor> _sensors = [];
   bool _isLoading = false;
 
   // Load the API URL directly
@@ -26,7 +25,6 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
 
   Future<void> _addDevice() async {
     final deviceName = _deviceNameController.text.trim();
-    //final alias = _aliasController.text.trim();
 
     if (deviceName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -38,35 +36,46 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
     setState(() {
       _isLoading = true;
     });
-    
+
+    final requestBody = jsonEncode({
+      'deviceName': deviceName,
+    });
+
+    print('Sending POST request with body: $requestBody');
+
     try {
       final response = await http.post(
         Uri.parse(apiUrl),
         headers: {'Content-Type': 'application/json'},
-        /*body: jsonEncode({
-          'deviceName': deviceName,
-        })*/
-        body: "{\"deviceName\": \"dummy-device\"}",
+        body: requestBody,
       );
 
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          thingArn = data['thingArn'];
-          iotEndpoint = data['iotEndpoint'];
-          certificatePem = data['certificates']['certificatePem'];
-          privateKey = data['certificates']['privateKey'];
-          publicKey = data['certificates']['publicKey'];
-        });
+        try {
+          final data = jsonDecode(response.body);
+          setState(() {
+            thingArn = data['thingArn'];
+            iotEndpoint = data['iotEndpoint'];
+            certificatePem = data['certificates']['certificatePem'];
+            privateKey = data['certificates']['privateKey'];
+            publicKey = data['certificates']['publicKey'];
+          });
+        } catch (e) {
+          throw Exception('Error parsing response JSON: $e');
+        }
       } else {
-        throw Exception('Failed to add device');
+        throw Exception('Failed to add device. Status: ${response.statusCode}');
       }
     } catch (e) {
+      print('Error during POST request: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error adding device: $e'),
-            duration: Duration(seconds: 15), // Set the duration here
+            duration: const Duration(seconds: 15),
           ),
         );
       }
@@ -143,19 +152,6 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   }
 
   void _downloadFile(String content, String filename) {
-    // Use a package like `flutter_file_saver` or `path_provider` to save the file
     print('Downloading $filename');
   }
-}
-
-class Sensor {
-  String name;
-  String dataType;
-
-  Sensor({required this.name, required this.dataType});
-
-  Map<String, dynamic> toJson() => {
-        'name': name,
-        'dataType': dataType,
-      };
 }
