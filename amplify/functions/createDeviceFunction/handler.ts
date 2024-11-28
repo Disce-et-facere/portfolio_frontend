@@ -1,5 +1,6 @@
 const AWS = require('aws-sdk'); // Use require for Lambda's pre-installed SDK
-const fetch = require('node-fetch'); // Still need to bundle node-fetch
+const https = require('https');
+import { IncomingMessage } from 'http';
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
 const iot = new AWS.Iot();
@@ -7,6 +8,23 @@ const iotData = new AWS.IotData({ endpoint: process.env.IOT_ENDPOINT });
 
 // AWS IoT CA Certificate URL
 const CA_CERT_URL = 'https://www.amazontrust.com/repository/AmazonRootCA1.pem';
+
+// Function to fetch CA certificate
+function fetchCA(url: string): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    https.get(url, (res: IncomingMessage) => {
+      let data = '';
+
+      res.on('data', (chunk: Buffer) => {
+        data += chunk.toString();
+      });
+
+      res.on('end', () => resolve(data));
+
+      res.on('error', (err: Error) => reject(err));
+    }).on('error', (err: Error) => reject(err));
+  });
+}
 
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -60,9 +78,9 @@ export const handler = async (
       })
       .promise();
 
-    // Step 5: Retrieve CA Certificate
-    const caCertResponse = await fetch(CA_CERT_URL);
-    const caCert = await caCertResponse.text();
+    // Step 5: Retrieve CA Certificate using fetchCA function
+    const caCert = await fetchCA(CA_CERT_URL);
+    console.log('Fetched CA Certificate:', caCert);
 
     // Step 6: Return IoT endpoint, certificates, and shadow details
     const iotEndpoint = (await iot.describeEndpoint({ endpointType: 'iot:Data-ATS' }).promise())
