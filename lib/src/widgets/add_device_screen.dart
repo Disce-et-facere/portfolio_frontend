@@ -38,10 +38,17 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
     });
 
     final requestBody = jsonEncode({
-      'deviceName': deviceName,
+      "deviceName": deviceName,
     });
 
-    print('Sending POST request with body: $requestBody');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sending POST request with body: $requestBody'),
+          duration: const Duration(seconds: 10),
+        ),
+      );
+    }
 
     try {
       final response = await http.post(
@@ -50,8 +57,16 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
         body: requestBody,
       );
 
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Response received - Status: ${response.statusCode}, Body: ${response.body}',
+            ),
+            duration: const Duration(seconds: 10),
+          ),
+        );
+      }
 
       if (response.statusCode == 200) {
         try {
@@ -70,7 +85,6 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
         throw Exception('Failed to add device. Status: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error during POST request: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -152,6 +166,13 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   }
 
   void _downloadFile(String content, String filename) {
-    print('Downloading $filename');
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Downloading $filename'),
+          duration: const Duration(seconds: 10),
+        ),
+      );
+    }
   }
 }
