@@ -15,7 +15,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   bool _isLoading = false;
 
   // Load the API URL directly
-  final String apiUrl = String.fromEnvironment('ADD_DEVICE_ENDPOINT');
+  final String apiUrl = const String.fromEnvironment('ADD_DEVICE_ENDPOINT');
 
   String? thingArn;
   String? iotEndpoint;
