@@ -46,7 +46,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
         /*body: jsonEncode({
           'deviceName': deviceName,
         })*/
-        body: '{"deviceName": "dummy-device"}',
+        body: "{\"deviceName\": \"dummy-device\"}",
       );
 
       if (response.statusCode == 200) {
