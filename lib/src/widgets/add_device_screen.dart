@@ -49,7 +49,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(jsonDecode(response.body));
+        final data = jsonDecode(response.body);
         setState(() {
           thingArn = data['thingArn'];
           iotEndpoint = data['iotEndpoint'];
