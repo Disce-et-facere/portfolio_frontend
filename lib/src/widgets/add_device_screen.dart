@@ -12,7 +12,7 @@ class AddDeviceScreen extends StatefulWidget {
 class _AddDeviceScreenState extends State<AddDeviceScreen> {
   final TextEditingController _deviceNameController = TextEditingController();
   final TextEditingController _aliasController = TextEditingController();
-  final List<Sensor> _sensors = [];
+  //final List<Sensor> _sensors = [];
   bool _isLoading = false;
 
   // Load the API URL directly
@@ -26,7 +26,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
 
   Future<void> _addDevice() async {
     final deviceName = _deviceNameController.text.trim();
-    final alias = _aliasController.text.trim();
+    //final alias = _aliasController.text.trim();
 
     if (deviceName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -45,8 +45,6 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'deviceName': deviceName,
-          'alias': alias,
-          'sensors': _sensors.map((sensor) => sensor.toJson()).toList(),
         }),
       );
 
