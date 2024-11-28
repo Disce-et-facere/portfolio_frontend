@@ -47,7 +47,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
           content: Text(
             'Sending POST request to $apiUrl with body: $requestBody',
           ),
-          duration: const Duration(seconds: 10),
+          duration: const Duration(seconds: 5),
         ),
       );
     }
@@ -65,7 +65,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
             content: Text(
               'Response received - Status: ${response.statusCode}, Body: ${response.body}',
             ),
-            duration: const Duration(seconds: 10),
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -91,7 +91,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error adding device: $e'),
-            duration: const Duration(seconds: 15),
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -172,7 +172,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Downloading $filename'),
-          duration: const Duration(seconds: 10),
+          duration: const Duration(seconds: 5),
         ),
       );
     }

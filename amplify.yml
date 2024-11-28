@@ -29,8 +29,8 @@ frontend:
         - flutter pub get
     build:
       commands:
-        # Build the Flutter web app
-        - flutter build web
+        # Pass Amplify environment variable into Dart define
+        - flutter build web --dart-define=ADD_DEVICE_ENDPOINT=$ADD_DEVICE_ENDPOINT
   artifacts:
     baseDirectory: build/web
     files:
