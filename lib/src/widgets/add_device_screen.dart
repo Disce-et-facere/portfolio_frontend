@@ -16,7 +16,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   bool _isLoading = false;
 
   // Load the API URL directly
-  final String apiUrl = 'https://jvwydv5ix2.execute-api.eu-central-1.amazonaws.com/AddDevice/amplify-portfoliofrontend-createDeviceFunctionlamb-FUhK7Wbnbkvq';
+  final String apiUrl = String.fromEnvironment('ADD_DEVICE_ENDPOINT');
 
   String? thingArn;
   String? iotEndpoint;
