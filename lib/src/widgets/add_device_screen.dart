@@ -43,9 +43,10 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
       final response = await http.post(
         Uri.parse(apiUrl),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+        /*body: jsonEncode({
           'deviceName': deviceName,
-        }),
+        })*/
+        body: '{"deviceName": "dummy-device"}',
       );
 
       if (response.statusCode == 200) {
