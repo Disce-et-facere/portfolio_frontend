@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:amplify_flutter/amplify_flutter.dart';
+import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 
 class AddDeviceScreen extends StatefulWidget {
   const AddDeviceScreen({super.key});
@@ -23,9 +25,27 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   String? privateKey;
   String? publicKey;
 
+  /// Fetch the Cognito Access Token
+  Future<String?> _getAccessToken() async {
+    try {
+      // Get the Cognito plugin
+      final cognitoPlugin = Amplify.Auth.getPlugin(AmplifyAuthCognito.pluginKey);
+
+      // Fetch the authentication session
+      final cognitoSession = await cognitoPlugin.fetchAuthSession();
+      
+      // Retrieve and return the access token
+      final tokens = cognitoSession.userPoolTokensResult.value;
+
+      return tokens.accessToken.raw;
+    } on AuthException catch (e) {
+      debugPrint('Error fetching access token: ${e.message}');
+      return null;
+    }
+  }
+
   Future<void> _addDevice() async {
     final deviceName = _deviceNameController.text.trim();
-
     if (deviceName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a device name')),
@@ -53,9 +73,19 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
     }
 
     try {
+      // Fetch the access token
+      final accessToken = await _getAccessToken();
+      if (accessToken == null) {
+        throw Exception('Access token could not be retrieved');
+      }
+
+      // Send POST request with Authorization header
       final response = await http.post(
         Uri.parse(apiUrl),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
         body: requestBody,
       );
 
