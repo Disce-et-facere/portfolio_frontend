@@ -33,13 +33,42 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
 
       // Fetch the authentication session
       final cognitoSession = await cognitoPlugin.fetchAuthSession();
-      
-      // Retrieve and return the access token
-      final tokens = cognitoSession.userPoolTokensResult.value;
 
-      return tokens.accessToken.raw;
+      // Check if the user is signed in
+      if (!cognitoSession.isSignedIn) {
+        debugPrint('User is not signed in.');
+        return null;
+      }
+
+      // Retrieve the access token
+      final tokens = cognitoSession.userPoolTokensResult.value;
+      final accessToken = tokens.accessToken.raw;
+
+      if(mounted){
+        if (ScaffoldMessenger.maybeOf(context) != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Access Token: $accessToken'),
+              duration: const Duration(seconds: 10), // Adjust duration as needed
+            ),
+          );
+        }
+      }
+
+      return accessToken;
+
     } on AuthException catch (e) {
       debugPrint('Error fetching access token: ${e.message}');
+      if(mounted){
+        if (ScaffoldMessenger.maybeOf(context) != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error fetching access token: ${e.message}'),
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+      }
       return null;
     }
   }
