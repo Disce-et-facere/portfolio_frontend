@@ -112,9 +112,6 @@ Future<String?> _getAccessToken() async {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
-          'Origin': 'https://main.d1oceu7bffyxdg.amplifyapp.com',
-          'Access-Control-Request-Method': 'POST',
-          'Access-Control-Request-Headers': 'authorization, content-type',
         },
         body: requestBody,
       );
