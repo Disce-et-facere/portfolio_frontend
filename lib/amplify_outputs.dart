@@ -176,4 +176,4 @@ const amplifyConfig = '''{
     }
   },
   "version": "1.1"
-}''';
+}'''; // trigger github change
