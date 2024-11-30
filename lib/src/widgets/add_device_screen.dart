@@ -17,7 +17,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   bool _isLoading = false;
 
   // Load the API URL directly
-  final String apiEndpoint = 'https://i54j20zyi1.execute-api.eu-central-1.amazonaws.com';
+  final String apiEndpoint = 'https://i54j20zyi1.execute-api.eu-central-1.amazonaws.com/amplify-d1oceu7bffyxdg-ma-createDeviceFunctionlamb-oG9vHtl2RenF';
   final String apiUrl = const String.fromEnvironment('ADD_DEVICE_ENDPOINT');
 
   String? thingArn;
@@ -86,7 +86,7 @@ Future<String?> _getAccessToken() async {
     });
 
     final requestBody = jsonEncode({
-      "deviceName": deviceName,
+      "deviceName": deviceName
     });
 
     if (mounted) {
