@@ -28,7 +28,7 @@ function fetchCA(url: string): Promise<string> {
 
 // Helper function to generate CORS headers
 const generateCORSHeaders = () => ({
-  "Access-Control-Allow-Origin": "https://main.d1oceu7bffyxdg.amplifyapp.com",
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Access-Control-Allow-Methods": "OPTIONS,POST",
 });
