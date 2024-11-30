@@ -26,15 +26,32 @@ function fetchCA(url: string): Promise<string> {
   });
 }
 
+// Helper function to generate CORS headers
+const generateCORSHeaders = () => ({
+  "Access-Control-Allow-Origin": "https://main.d1oceu7bffyxdg.amplifyapp.com",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Methods": "OPTIONS,POST",
+});
+
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
+    // Handle OPTIONS preflight request
+    if (event.httpMethod === "OPTIONS") {
+      return {
+        statusCode: 200,
+        headers: generateCORSHeaders(),
+        body: "",
+      };
+    }
+
     const { deviceName } = JSON.parse(event.body || '{}');
 
     if (!deviceName) {
       return {
         statusCode: 400,
+        headers: generateCORSHeaders(),
         body: JSON.stringify({ error: 'Device name is required' }),
       };
     }
@@ -88,6 +105,7 @@ export const handler = async (
 
     return {
       statusCode: 200,
+      headers: generateCORSHeaders(),
       body: JSON.stringify({
         thingArn,
         iotEndpoint,
@@ -104,8 +122,8 @@ export const handler = async (
     console.error('Error creating device:', error);
     return {
       statusCode: 500,
+      headers: generateCORSHeaders(),
       body: JSON.stringify({ error: (error as Error).message }),
     };
   }
 };
-// just a comment change last update time on aws console
