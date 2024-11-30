@@ -25,53 +25,51 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   String? privateKey;
   String? publicKey;
 
-  /// Fetch the Cognito Access Token
-  Future<String?> _getAccessToken() async {
-    try {
-      // Get the Cognito plugin
-      final cognitoPlugin = Amplify.Auth.getPlugin(AmplifyAuthCognito.pluginKey);
+Future<String?> _getAccessToken() async {
+  try {
+    // Get the Cognito plugin
+    final cognitoPlugin = Amplify.Auth.getPlugin(AmplifyAuthCognito.pluginKey);
 
-      // Fetch the authentication session
-      final cognitoSession = await cognitoPlugin.fetchAuthSession();
+    // Fetch the authentication session
+    final cognitoSession = await cognitoPlugin.fetchAuthSession();
 
-      // Check if the user is signed in
-      if (!cognitoSession.isSignedIn) {
-        debugPrint('User is not signed in.');
-        return null;
-      }
+    // Debug: Print the session details
+    debugPrint('Cognito Session: $cognitoSession');
 
-      // Retrieve the access token
-      final tokens = cognitoSession.userPoolTokensResult.value;
-      final accessToken = tokens.accessToken.raw;
-
-      if(mounted){
-        if (ScaffoldMessenger.maybeOf(context) != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Access Token: $accessToken'),
-              duration: const Duration(seconds: 10), // Adjust duration as needed
-            ),
-          );
-        }
-      }
-
-      return accessToken;
-
-    } on AuthException catch (e) {
-      debugPrint('Error fetching access token: ${e.message}');
-      if(mounted){
-        if (ScaffoldMessenger.maybeOf(context) != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error fetching access token: ${e.message}'),
-              duration: const Duration(seconds: 5),
-            ),
-          );
-        }
-      }
+    // Check if the user is signed in
+    if (!cognitoSession.isSignedIn) {
+      debugPrint('User is not signed in.');
       return null;
     }
+
+    // Retrieve the access token
+    final tokens = cognitoSession.userPoolTokensResult.value;
+    final accessToken = tokens.accessToken.raw;
+
+    // Debug: Print the access token
+    debugPrint('Access Token: $accessToken');
+
+    // Show the access token in a SnackBar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Access Token: $accessToken'),
+        duration: const Duration(seconds: 10),
+      ),
+    );
+
+    return accessToken;
+
+  } on AuthException catch (e) {
+    debugPrint('Error fetching access token: ${e.message}');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error fetching access token: ${e.message}'),
+        duration: const Duration(seconds: 5),
+      ),
+    );
+    return null;
   }
+}
 
   Future<void> _addDevice() async {
     final deviceName = _deviceNameController.text.trim();
