@@ -40,7 +40,7 @@ export const handler = async (
     // Handle OPTIONS preflight request
     if (event.httpMethod === "OPTIONS") {
       return {
-        statusCode: 200,
+        statusCode: 204,
         headers: generateCORSHeaders(),
         body: "",
       };
