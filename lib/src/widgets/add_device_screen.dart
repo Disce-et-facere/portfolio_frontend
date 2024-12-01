@@ -26,49 +26,26 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   String? privateKey;
   String? publicKey;
 
-Future<String?> _getAccessToken() async {
+Future<String> _getAccessToken() async {
   try {
-    // Get the Cognito plugin
     final cognitoPlugin = Amplify.Auth.getPlugin(AmplifyAuthCognito.pluginKey);
 
-    // Fetch the authentication session
     final cognitoSession = await cognitoPlugin.fetchAuthSession();
 
-    // Debug: Print the session details
-    debugPrint('Cognito Session: $cognitoSession');
-
-    // Check if the user is signed in
     if (!cognitoSession.isSignedIn) {
       debugPrint('User is not signed in.');
-      return null;
+      return "NOT SIGNED IN!";
     }
-
-    // Retrieve the access token
     final tokens = cognitoSession.userPoolTokensResult.value;
-    final accessToken = tokens.accessToken.raw;
+    final String accessToken = tokens.accessToken.raw;
 
-    // Debug: Print the access token
     debugPrint('Access Token: $accessToken');
-
-    // Show the access token in a SnackBar
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Access Token: $accessToken'),
-        duration: const Duration(seconds: 10),
-      ),
-    );
 
     return accessToken;
 
   } on AuthException catch (e) {
     debugPrint('Error fetching access token: ${e.message}');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Error fetching access token: ${e.message}'),
-        duration: const Duration(seconds: 5),
-      ),
-    );
-    return null;
+    return "NO ACCESS TOKEN!";
   }
 }
 
@@ -102,12 +79,7 @@ Future<String?> _getAccessToken() async {
 
     try {
       // Fetch the access token
-      final accessToken = await _getAccessToken();
-      if (accessToken == null) {
-        throw Exception('Access token could not be retrieved');
-      }
-
-      // Send POST request with Authorization header
+      final String accessToken = await _getAccessToken();
       final response = await http.post(
         Uri.parse(apiEndpoint),
         headers: {
