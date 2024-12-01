@@ -114,7 +114,11 @@ Future<String?> _getAccessToken() async {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
         },
-        body: requestBody,
+        body: jsonEncode({
+          {
+            "deviceName": deviceName
+          }
+      }),
       );
 
       if (mounted) {
