@@ -71,7 +71,9 @@ Future<String> _getAccessToken() async {
           'Authorization': 'Bearer $accessToken',
         },
         body: jsonEncode({
+          {
             "deviceName": deviceName
+          }  
       }),
       );
       
