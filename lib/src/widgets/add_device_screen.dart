@@ -17,7 +17,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   bool _isLoading = false;
 
   // Load the API URL directly
-  final String apiEndpoint = 'https://i54j20zyi1.execute-api.eu-central-1.amazonaws.com/add-device';
+  final String apiEndpoint = 'https://i54j20zyi1.execute-api.eu-central-1.amazonaws.com';
   final String apiUrl = const String.fromEnvironment('ADD_DEVICE_ENDPOINT');
 
   String? thingArn;
