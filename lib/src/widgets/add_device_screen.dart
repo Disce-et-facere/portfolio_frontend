@@ -70,7 +70,9 @@ Future<String> _getAccessToken() async {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
         },
-        body: {"deviceName": deviceName},
+        body: jsonEncode({
+          "deviceName": deviceName
+      }),
       );
       
       debugPrint('Response received - Status: ${response.statusCode}, Body: ${response.body}',);
