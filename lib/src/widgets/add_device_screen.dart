@@ -62,23 +62,7 @@ Future<String> _getAccessToken() async {
       _isLoading = true;
     });
 
-    final requestBody = jsonEncode({
-      "deviceName": deviceName
-    });
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Sending POST request to $apiUrl with body: $requestBody',
-          ),
-          duration: const Duration(seconds: 5),
-        ),
-      );
-    }
-
     try {
-      // Fetch the access token
       final String accessToken = await _getAccessToken();
       final response = await http.post(
         Uri.parse(apiEndpoint),
@@ -87,22 +71,11 @@ Future<String> _getAccessToken() async {
           'Authorization': 'Bearer $accessToken',
         },
         body: jsonEncode({
-          {
             "deviceName": deviceName
-          }
       }),
       );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Response received - Status: ${response.statusCode}, Body: ${response.body}',
-            ),
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
+      
+      debugPrint('Response received - Status: ${response.statusCode}, Body: ${response.body}',);
 
       if (response.statusCode == 200) {
         try {
@@ -121,14 +94,7 @@ Future<String> _getAccessToken() async {
         throw Exception('Failed to add device. Status: ${response.statusCode}');
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error adding device: $e'),
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
+      debugPrint('Error adding device: $e');
     } finally {
       setState(() {
         _isLoading = false;
