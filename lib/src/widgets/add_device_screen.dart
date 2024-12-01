@@ -63,12 +63,12 @@ Future<String> _getAccessToken() async {
     });
 
     try {
-      final String accessToken = await _getAccessToken();
+      //final String accessToken = await _getAccessToken();
       final response = await http.post(
         Uri.parse(apiEndpoint),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $accessToken',
+          //'Authorization': 'Bearer $accessToken',
         },
         body: jsonEncode({
           "deviceName": deviceName
