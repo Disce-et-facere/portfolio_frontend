@@ -88,9 +88,11 @@ Future<String> _getAccessToken() async {
             publicKey = data['certificates']['publicKey'];
           });
         } catch (e) {
+          debugPrint('Error parsing response JSON: $e');
           throw Exception('Error parsing response JSON: $e');
         }
       } else {
+        debugPrint('Failed to add device. Status: ${response.statusCode}');
         throw Exception('Failed to add device. Status: ${response.statusCode}');
       }
     } catch (e) {
