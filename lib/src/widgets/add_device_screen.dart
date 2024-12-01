@@ -16,8 +16,6 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   final TextEditingController _aliasController = TextEditingController();
   bool _isLoading = false;
 
-  // Load the API URL directly
-  final String apiEndpoint = 'https://i54j20zyi1.execute-api.eu-central-1.amazonaws.com';
   final String apiUrl = const String.fromEnvironment('ADD_DEVICE_ENDPOINT');
 
   String? thingArn;
@@ -63,18 +61,18 @@ Future<String> _getAccessToken() async {
     });
 
     try {
-      //final String accessToken = await _getAccessToken();
+      final String accessToken = await _getAccessToken();
       final response = await http.post(
-        Uri.parse(apiEndpoint),
+        Uri.parse(apiUrl),
         headers: {
           'Content-Type': 'application/json',
-          //'Authorization': 'Bearer $accessToken',
+          'Authorization': 'Bearer $accessToken',
         },
         body: jsonEncode({
           "deviceName": deviceName
       }),
       );
-      
+      // for debugging
       debugPrint('Response received - Status: ${response.statusCode}, Body: ${response.body}',);
 
       if (response.statusCode == 200) {
