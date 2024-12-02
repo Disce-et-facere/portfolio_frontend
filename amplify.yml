@@ -6,7 +6,7 @@ backend:
         # Install dependencies for backend
         - npm ci --cache .npm --prefer-offline
         # Install dependencies for each Lambda function
-        - for dir in amplify/functions/*; do
+        - for dir in amplify/lambdas/*; do
             if [ -d "$dir" ]; then
               echo "Installing dependencies for $dir...";
               cd "$dir" && npm install && cd -;
@@ -29,8 +29,12 @@ frontend:
         - flutter pub get
     build:
       commands:
-        # Pass Amplify environment variable into Dart define
-        - flutter build web --dart-define=ADD_DEVICE_ENDPOINT=$ADD_DEVICE_ENDPOINT
+        # Pass Amplify environment variables into Dart define
+        - flutter build web \
+          --dart-define=ADD_DEVICE_ENDPOINT=$ADD_DEVICE_ENDPOINT \
+          --dart-define=FETCH_DEVICES_ENDPOINT=$FETCH_DEVICES_ENDPOINT \
+          --dart-define=COGNITO_ISSUER_URL=$COGNITO_ISSUER_URL \
+          --dart-define=COGNITO_APP_CLIENT_ID=$COGNITO_APP_CLIENT_ID
   artifacts:
     baseDirectory: build/web
     files:
