@@ -1,8 +1,9 @@
-import * as AWS from 'aws-sdk';
+//import * as AWS from 'aws-sdk';
+import { ResourceGroupsTaggingAPI, CloudFormation } from 'aws-sdk';
 
 // Initialize Tagging API and CloudFormation clients
-const taggingAPI = new AWS.ResourceGroupsTaggingAPI();
-const cloudFormation = new AWS.CloudFormation();
+const taggingAPI = new ResourceGroupsTaggingAPI();
+const cloudFormation = new CloudFormation();
 
 /**
  * Fetches a resource ARN by tag key-value pair.
