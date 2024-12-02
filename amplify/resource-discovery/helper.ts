@@ -1,4 +1,4 @@
-const AWS = require('aws-sdk');
+import AWS from 'aws-sdk';
 
 // Initialize clients
 const taggingAPI = new AWS.ResourceGroupsTaggingAPI();
