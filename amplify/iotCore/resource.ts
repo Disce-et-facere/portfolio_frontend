@@ -1,5 +1,6 @@
+import { defineFunction } from '@aws-amplify/backend';
 import { addTag, getResourceArn } from '../resource-discovery/helper';
-import * as AWS from 'aws-sdk';
+import AWS from 'aws-sdk';
 
 const iam = new AWS.IAM();
 const iot = new AWS.Iot();
