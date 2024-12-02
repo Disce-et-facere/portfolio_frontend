@@ -1,6 +1,6 @@
 import * as AWS from 'aws-sdk';
 
-// Initialize the Tagging API client
+// Initialize Tagging API and CloudFormation clients
 const taggingAPI = new AWS.ResourceGroupsTaggingAPI();
 const cloudFormation = new AWS.CloudFormation();
 
@@ -11,13 +11,18 @@ const cloudFormation = new AWS.CloudFormation();
  * @returns The ARN of the matched resource or undefined
  */
 export async function getResourceArn(tagKey: string, tagValue: string): Promise<string | undefined> {
-  const result = await taggingAPI
-    .getResources({
-      TagFilters: [{ Key: tagKey, Values: [tagValue] }],
-    })
-    .promise();
+  try {
+    const result = await taggingAPI
+      .getResources({
+        TagFilters: [{ Key: tagKey, Values: [tagValue] }],
+      })
+      .promise();
 
-  return result.ResourceTagMappingList?.[0]?.ResourceARN;
+    return result.ResourceTagMappingList?.[0]?.ResourceARN;
+  } catch (error) {
+    console.error(`Error fetching resource ARN for tag ${tagKey}:${tagValue}:`, error);
+    throw error;
+  }
 }
 
 /**
@@ -27,14 +32,19 @@ export async function getResourceArn(tagKey: string, tagValue: string): Promise<
  * @param tagValue The value of the tag
  */
 export async function addTag(resourceArn: string, tagKey: string, tagValue: string): Promise<void> {
-  await taggingAPI
-    .tagResources({
-      ResourceARNList: [resourceArn],
-      Tags: {
-        [tagKey]: tagValue,
-      },
-    })
-    .promise();
+  try {
+    await taggingAPI
+      .tagResources({
+        ResourceARNList: [resourceArn],
+        Tags: {
+          [tagKey]: tagValue,
+        },
+      })
+      .promise();
+  } catch (error) {
+    console.error(`Error adding tag ${tagKey}:${tagValue} to resource ${resourceArn}:`, error);
+    throw error;
+  }
 }
 
 /**
