@@ -1,4 +1,4 @@
-import {postDeploy} from './backend'
+const { postDeploy } = require('./backend');
 
 (async () => {
   try {
