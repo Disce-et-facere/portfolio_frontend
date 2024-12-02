@@ -14,6 +14,9 @@ backend:
           done
         # Deploy the backend using ampx
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID --outputs-format dart
+        # Run post-deployment tasks
+        - echo "Running post-deployment script..."
+        - node amplify/post-deploy.js
 frontend:
   phases:
     preBuild:
@@ -30,11 +33,7 @@ frontend:
     build:
       commands:
         # Pass Amplify environment variables into Dart define
-        - flutter build web \
-          --dart-define=ADD_DEVICE_ENDPOINT=$ADD_DEVICE_ENDPOINT \
-          --dart-define=FETCH_DEVICES_ENDPOINT=$FETCH_DEVICES_ENDPOINT \
-          --dart-define=COGNITO_ISSUER_URL=$COGNITO_ISSUER_URL \
-          --dart-define=COGNITO_APP_CLIENT_ID=$COGNITO_APP_CLIENT_ID
+        - flutter build web --dart-define=ADD_DEVICE_ENDPOINT=$ADD_DEVICE_ENDPOINT --dart-define=FETCH_DEVICES_ENDPOINT=$FETCH_DEVICES_ENDPOINT --dart-define=COGNITO_ISSUER_URL=$COGNITO_ISSUER_URL --dart-define=COGNITO_APP_CLIENT_ID=$COGNITO_APP_CLIENT_ID
   artifacts:
     baseDirectory: build/web
     files:

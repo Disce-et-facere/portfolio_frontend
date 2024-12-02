@@ -20,9 +20,11 @@ export const backend = defineBackend({
  * Post-deployment: Apply resource tagging.
  */
 export const postDeploy = async () => {
+  console.log('Starting post-deployment tasks...');
   await tagCognitoResources(); // Tag Cognito resources
   await tagDynamoDBTable(); // Tag DynamoDB table
   await setupIoTCore(); // Setup IoT Core rules and tagging
   await setupAmpResources(); // tag web app URL
   await setupApiGateway(); // Setup API Gateway with routes
+  console.log('Post-deployment tasks completed.');
 };
