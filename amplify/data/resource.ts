@@ -1,4 +1,3 @@
-import {defineBackend} from '@aws-amplify/backend'
 import { type ClientSchema, a, defineData} from '@aws-amplify/backend';
 import { addTag } from '../resource-discovery/helper';
 
