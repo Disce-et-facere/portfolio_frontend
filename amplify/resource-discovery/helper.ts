@@ -1,9 +1,8 @@
-//import * as AWS from 'aws-sdk';
-import { ResourceGroupsTaggingAPI, CloudFormation } from 'aws-sdk';
+const AWS = require('aws-sdk');
 
-// Initialize Tagging API and CloudFormation clients
-const taggingAPI = new ResourceGroupsTaggingAPI();
-const cloudFormation = new CloudFormation();
+// Initialize clients
+const taggingAPI = new AWS.ResourceGroupsTaggingAPI();
+const cloudFormation = new AWS.CloudFormation();
 
 /**
  * Fetches a resource ARN by tag key-value pair.
@@ -65,7 +64,12 @@ export async function getCloudFormationOutput(
       throw new Error(`Stack "${stackName}" not found.`);
     }
 
-    const output = stack.Outputs?.find((o) => o.OutputKey === outputKey);
+    type StackOutput = {
+      OutputKey?: string;
+      OutputValue?: string;
+    };
+
+    const output = stack.Outputs?.find((o: StackOutput) => o.OutputKey === outputKey);
     return output?.OutputValue;
   } catch (error) {
     console.error(`Error fetching output "${outputKey}" from stack "${stackName}":`, error);
