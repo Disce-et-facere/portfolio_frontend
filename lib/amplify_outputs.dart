@@ -1,9 +1,9 @@
-const amplifyConfig = '''{
+const amplifyConfig = r'''{
   "auth": {
-    "user_pool_id": "eu-central-1_8CahOmFtu",
+    "user_pool_id": "eu-central-1_kpETugB0I",
     "aws_region": "eu-central-1",
-    "user_pool_client_id": "607439gcflutsmha0cfd3vri08",
-    "identity_pool_id": "eu-central-1:e63e7105-19ca-4765-aa6e-75459a4bd023",
+    "user_pool_client_id": "7u6d52qq1tc9geof7h7g2ist21",
+    "identity_pool_id": "eu-central-1:18d05650-481e-4e2c-9f1f-f575dff65ef0",
     "mfa_methods": [],
     "standard_required_attributes": [
       "email"
@@ -14,6 +14,7 @@ const amplifyConfig = '''{
     "user_verification_types": [
       "email"
     ],
+    "groups": [],
     "mfa_configuration": "NONE",
     "password_policy": {
       "min_length": 8,
@@ -25,12 +26,10 @@ const amplifyConfig = '''{
     "unauthenticated_identities_enabled": true
   },
   "data": {
-    "url": "https://trmwgi2xcnafrgqnbattumvuei.appsync-api.eu-central-1.amazonaws.com/graphql",
+    "url": "https://zfi7n4vozrhc7neyzel56iucfm.appsync-api.eu-central-1.amazonaws.com/graphql",
     "aws_region": "eu-central-1",
-    "api_key": "da2-jf53dllybzhodekqudjxgavw3m",
     "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
     "authorization_types": [
-      "API_KEY",
       "AWS_IAM"
     ],
     "model_introspection": {
@@ -101,22 +100,23 @@ const amplifyConfig = '''{
               }
             },
             {
+              "type": "key",
+              "properties": {
+                "name": "OwnerIDIndex",
+                "queryField": "listDevicesByOwnerID",
+                "fields": [
+                  "ownerID",
+                  "timestamp"
+                ]
+              }
+            },
+            {
               "type": "auth",
               "properties": {
                 "rules": [
                   {
                     "allow": "private",
                     "provider": "userPools",
-                    "operations": [
-                      "create",
-                      "update",
-                      "delete",
-                      "read"
-                    ]
-                  },
-                  {
-                    "allow": "public",
-                    "provider": "apiKey",
                     "operations": [
                       "create",
                       "update",
@@ -138,42 +138,8 @@ const amplifyConfig = '''{
         }
       },
       "enums": {},
-      "nonModels": {},
-      "mutations": {
-        "addTelemetry": {
-          "name": "addTelemetry",
-          "isArray": false,
-          "type": "AWSJSON",
-          "isRequired": false,
-          "arguments": {
-            "device_id": {
-              "name": "device_id",
-              "isArray": false,
-              "type": "String",
-              "isRequired": true
-            },
-            "timestamp": {
-              "name": "timestamp",
-              "isArray": false,
-              "type": "AWSTimestamp",
-              "isRequired": true
-            },
-            "ownerID": {
-              "name": "ownerID",
-              "isArray": false,
-              "type": "String",
-              "isRequired": true
-            },
-            "data": {
-              "name": "data",
-              "isArray": false,
-              "type": "AWSJSON",
-              "isRequired": true
-            }
-          }
-        }
-      }
+      "nonModels": {}
     }
   },
-  "version": "1.1"
-}'''; // trigger github change
+  "version": "1.3"
+}''';

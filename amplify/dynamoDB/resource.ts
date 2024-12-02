@@ -1,5 +1,6 @@
 import { type ClientSchema, a, defineData} from '@aws-amplify/backend';
 import { addTag } from '../resource-discovery/helper';
+import AWS from 'aws-sdk';
 
 export const schema = a.schema({
   telemetry: a

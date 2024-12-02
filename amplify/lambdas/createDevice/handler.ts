@@ -1,10 +1,10 @@
-const AWS = require('aws-sdk'); // Use require for Lambda's pre-installed SDK
+const AWS = require('aws-sdk');
 const https = require('https');
 import { IncomingMessage } from 'http';
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
 const iot = new AWS.Iot();
-const iotData = new AWS.IotData({ endpoint: process.env.IOT_ENDPOINT });
+const iotData = new AWS.IotData({ endpoint: process.env.IOT_CORE_ENDPOINT });
 
 // AWS IoT CA Certificate URL
 const CA_CERT_URL = 'https://www.amazontrust.com/repository/AmazonRootCA1.pem';
@@ -28,7 +28,7 @@ function fetchCA(url: string): Promise<string> {
 
 // Helper function to generate CORS headers
 const generateCORSHeaders = () => ({
-  "Access-Control-Allow-Origin": "https://*",
+  "Access-Control-Allow-Origin": process.env.WEB_APP_URL || "*", // Use a specific URL or fallback to *
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Access-Control-Allow-Methods": "OPTIONS,POST",
 });
@@ -120,10 +120,11 @@ export const handler = async (
     };
   } catch (error) {
     console.error('Error creating device:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return {
       statusCode: 500,
       headers: generateCORSHeaders(),
-      body: JSON.stringify({ error: (error as Error).message }),
+      body: JSON.stringify({ error: errorMessage }),
     };
   }
 };
