@@ -12,13 +12,11 @@ backend:
               cd "$dir" && npm install && cd -;
             fi;
           done
-        # Compile TypeScript post-deployment script
-        - npx tsc amplify/post-deploy.ts --outDir dist
         # Deploy the backend using ampx
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID --outputs-format dart
         # Run post-deployment tasks
         - echo "Running post-deployment script..."
-        - node dist/amplify/post-deploy.js
+        - node amplify/post-deploy.ts
 frontend:
   phases:
     preBuild:

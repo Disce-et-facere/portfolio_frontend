@@ -1,6 +1,6 @@
-import {postDeploy} from './backend';
+const { postDeploy } = require('./backend');
 
-const runPostDeploy = async () => {
+(async () => {
   try {
     console.log("Running post-deployment tasks...");
     await postDeploy();
@@ -9,7 +9,4 @@ const runPostDeploy = async () => {
     console.error("Error running post-deployment tasks:", error);
     process.exit(1);
   }
-};
-
-runPostDeploy();
-
+})();
