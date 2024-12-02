@@ -5,6 +5,8 @@ backend:
       commands:
         # Install dependencies for backend
         - npm ci --cache .npm --prefer-offline
+        # Install the AWS SDK for post-deployment tasks
+        - npm install aws-sdk
         # Install dependencies for each Lambda function
         - for dir in amplify/lambdas/*; do
             if [ -d "$dir" ]; then
