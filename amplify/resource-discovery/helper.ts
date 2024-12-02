@@ -1,4 +1,4 @@
-import AWS from 'aws-sdk';
+import * as AWS from 'aws-sdk';
 
 // Initialize the Tagging API client
 const taggingAPI = new AWS.ResourceGroupsTaggingAPI();

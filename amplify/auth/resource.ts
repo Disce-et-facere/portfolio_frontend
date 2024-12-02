@@ -1,6 +1,6 @@
 import { defineAuth } from '@aws-amplify/backend';
 import { addTag } from '../resource-discovery/helper'; // For tagging resources
-import AWS from 'aws-sdk';
+import * as AWS from 'aws-sdk';
 
 export const auth = defineAuth({
   loginWith: {

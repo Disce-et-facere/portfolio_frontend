@@ -1,6 +1,6 @@
 import { defineFunction } from '@aws-amplify/backend';
 import { addTag, getResourceArn } from '../../resource-discovery/helper';
-import AWS from 'aws-sdk';
+import * as AWS from 'aws-sdk';
 
 // Define the Lambda function for fetching devices
 export const fetchDevices = defineFunction({
