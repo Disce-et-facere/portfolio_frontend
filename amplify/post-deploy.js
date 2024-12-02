@@ -1,4 +1,4 @@
-import { postDeploy } from './backend'; // Import your postDeploy function
+import { postDeploy } from '@aws-amplify/backend';
 
 (async () => {
   try {
