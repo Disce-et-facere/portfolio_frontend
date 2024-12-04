@@ -22,7 +22,7 @@ export const backend = defineBackend({
 //
 //  PERMISSIONS
 //
-// Permissions/policies for createDevice Lambda
+// Permissions for createDevice Lambda
 const createDeviceLambda = backend.createDevice.resources.lambda;
 
 const iotPolicyAdd = new iam.PolicyStatement({
@@ -51,7 +51,7 @@ createDeviceLambda.addToRolePolicy(iotPolicyAdd);
 createDeviceLambda.addToRolePolicy(certPolicy);
 createDeviceLambda.addToRolePolicy(generalIotPolicy);
 
-// Permissions/policies for fetchDevices Lambda
+// Permissions for fetchDevices Lambda
 const fetchDevicesLambda = backend.fetchDevices.resources.lambda;
 
 const dynamoDbReadPolicy = new iam.PolicyStatement({
@@ -72,7 +72,7 @@ const dynamoDbPolicy = new iam.PolicyStatement({
   resources: ['arn:aws:dynamodb:eu-central-1:891612540400:table/YourTableName'],
 });
 
-
+// permission for deleteDevice Lambda
 const iotPolicyDelete = new iam.PolicyStatement({
   effect: iam.Effect.ALLOW,
   actions: [
@@ -85,3 +85,14 @@ const iotPolicyDelete = new iam.PolicyStatement({
 
 deleteDevicesLambda.addToRolePolicy(dynamoDbPolicy);
 deleteDevicesLambda.addToRolePolicy(iotPolicyDelete);
+
+// permission for fetchDeviceData lambda
+const fetchDeviceDataLambda = backend.fetchDeviceData.resources.lambda;
+
+const dynamoDbFetchDeviceDataPolicy = new iam.PolicyStatement({
+  effect: iam.Effect.ALLOW,
+  actions: ['dynamodb:Query', 'dynamodb:GetItem'],
+  resources: ['arn:aws:dynamodb:eu-central-1:891612540400:table/YourTableName'],
+});
+
+fetchDeviceDataLambda.addToRolePolicy(dynamoDbFetchDeviceDataPolicy);
