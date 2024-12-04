@@ -28,7 +28,7 @@ function fetchCA(url: string): Promise<string> {
 
 // Helper function to generate CORS headers
 const generateCORSHeaders = () => ({
-  "Access-Control-Allow-Origin": process.env.WEB_APP_URL || "*", // Use a specific URL or fallback to *
+  "Access-Control-Allow-Origin": process.env.WEB_APP_URL!,
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Access-Control-Allow-Methods": "OPTIONS,POST",
 });
@@ -120,11 +120,15 @@ export const handler = async (
     };
   } catch (error) {
     console.error('Error creating device:', error);
+    const envValues = {
+      IOT_CORE_ENDPOINT: process.env.IOT_CORE_ENDPOINT || null,
+      WEB_APP_URL: process.env.WEB_APP_URL || null,
+    };
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return {
       statusCode: 500,
       headers: generateCORSHeaders(),
-      body: JSON.stringify({ error: errorMessage }),
+      body: JSON.stringify({ error: errorMessage, environment: envValues,}),
     };
   }
 };

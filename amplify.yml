@@ -29,8 +29,13 @@ frontend:
         - flutter pub get
     build:
       commands:
-        # Pass Amplify environment variables into Dart define
-        - flutter build web --dart-define=ADD_DEVICE_ENDPOINT=$ADD_DEVICE_ENDPOINT --dart-define=FETCH_DEVICES_ENDPOINT=$FETCH_DEVICES_ENDPOINT --dart-define=COGNITO_ISSUER_URL=$COGNITO_ISSUER_URL --dart-define=COGNITO_APP_CLIENT_ID=$COGNITO_APP_CLIENT_ID
+        - echo "Using environment variables from Amplify secrets..."
+        - flutter build web \
+            --dart-define=CREATE_DEVICE_LAMBDA_ARN=$CREATE_DEVICE_LAMBDA_ARN \
+            --dart-define=DEVICE_TABLE_NAME=$DEVICE_TABLE_NAME \
+            --dart-define=FETCH_DEVICES_LAMBDA_ARN=$FETCH_DEVICES_LAMBDA_ARN \
+            --dart-define=IOT_CORE_ENDPOINT=$IOT_CORE_ENDPOINT \
+            --dart-define=WEB_APP_URL=$WEB_APP_URL
   artifacts:
     baseDirectory: build/web
     files:
