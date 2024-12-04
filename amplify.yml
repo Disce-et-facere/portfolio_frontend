@@ -29,7 +29,11 @@ frontend:
         - flutter pub get
     build:
       commands:
-
+        # Fetch secrets from AWS Secrets Manager
+        - echo "Fetching secrets..."
+        - SECRETS=$(aws secretsmanager get-secret-value --secret-id SECRET_NAME --query SecretString --output text)
+        # Export secrets as environment variables
+        - export $(echo $SECRETS | jq -r 'to_entries | .[] | "\(.key)=\(.value)"')
   artifacts:
     baseDirectory: build/web
     files:
