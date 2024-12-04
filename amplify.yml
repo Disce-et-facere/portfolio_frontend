@@ -29,7 +29,7 @@ frontend:
         - flutter pub get
     build:
       commands:
-        
+        - flutter build web
   artifacts:
     baseDirectory: build/web
     files:
