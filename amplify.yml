@@ -31,7 +31,9 @@ frontend:
       commands:
         - echo "Using environment variables from Amplify secrets..."
         - flutter build web \
+            --dart-define=CREATE_DEVICE_LAMBDA_ARN=$CREATE_DEVICE_LAMBDA_ARN \
             --dart-define=DEVICE_TABLE_NAME=$DEVICE_TABLE_NAME \
+            --dart-define=FETCH_DEVICES_LAMBDA_ARN=$FETCH_DEVICES_LAMBDA_ARN \
             --dart-define=IOT_CORE_ENDPOINT=$IOT_CORE_ENDPOINT \
             --dart-define=WEB_APP_URL=$WEB_APP_URL
   artifacts:
