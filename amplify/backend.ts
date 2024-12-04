@@ -5,7 +5,7 @@ import { tableSchema} from './data/resource';
 import { createDevice } from './lambdas/createDevice/resource';
 import { fetchDevices } from './lambdas/fetchDevices/resource';
 import { deleteDevice } from './lambdas/deleteDevice/resource';
-import { setupApiGateway } from './apiGateway/resource';
+import {fetchDeviceData} from './lambdas/fetchDeviceData/resource'
 //import { telemetryTroubleshootingHandler } from './lambdas/telemetry-troubleshooting/resource';
 
 export const backend = defineBackend({
@@ -14,13 +14,14 @@ export const backend = defineBackend({
   createDevice, // CreateDevice depends on IoT Core
   fetchDevices, // FetchDevices depends on DynamoDB
   deleteDevice,
-  setupApiGateway,
+  fetchDeviceData,
   //telemetryTroubleshootingHandler,
 
 });
 
-
-
+//
+//  PERMISSIONS
+//
 // Permissions/policies for createDevice Lambda
 const createDeviceLambda = backend.createDevice.resources.lambda;
 
