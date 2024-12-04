@@ -1,17 +1,20 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "module": "es2022",
-    "moduleResolution": "bundler",
+    "module": "commonjs", // Use CommonJS for compatibility with Node.js
+    "moduleResolution": "node", // Node.js module resolution
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
+    "outDir": "dist", // Specify the output directory
     "paths": {
       "$amplify/*": [
         "../.amplify/generated/*"
       ]
     }
-  }
+  },
+  "include": ["amplify/**/*"], // Include all files in the amplify folder
+  "exclude": ["node_modules", "dist"] // Exclude unnecessary folders
 }
