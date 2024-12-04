@@ -5,7 +5,7 @@ const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const iot = new AWS.Iot();
 
 const generateCORSHeaders = () => ({
-  "Access-Control-Allow-Origin": process.env.WEB_APP_URL || "*", // Use environment variable or fallback
+  "Access-Control-Allow-Origin": process.env.WEB_APP_URL!,
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Access-Control-Allow-Methods": "OPTIONS,DELETE",
 });
