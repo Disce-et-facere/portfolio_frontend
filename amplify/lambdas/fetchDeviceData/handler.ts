@@ -7,22 +7,24 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-    // Extract deviceId from query parameters
     const deviceId = event.queryStringParameters?.deviceId;
+    const ownerId = event.queryStringParameters?.ownerId;
 
-    if (!deviceId) {
+    if (!deviceId || !ownerId) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'deviceId is required' }),
+        body: JSON.stringify({ error: 'Both deviceId and ownerId are required' }),
       };
     }
 
-    // Query DynamoDB for all data related to the specific device
+    // Query DynamoDB using the GSI
     const params = {
       TableName: process.env.DEVICE_TABLE_NAME!,
-      KeyConditionExpression: 'deviceID = :deviceId',
+      IndexName: 'OwnerIDIndex', // Use the GSI
+      KeyConditionExpression: 'ownerID = :ownerID AND device_id = :deviceID',
       ExpressionAttributeValues: {
-        ':deviceId': deviceId,
+        ':ownerID': ownerId,
+        ':deviceID': deviceId,
       },
       ProjectionExpression: 'timestamp, data', // Retrieve only the necessary fields
     };
