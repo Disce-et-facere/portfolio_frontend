@@ -18,7 +18,7 @@ export const handler = async (
     }
 
     const params = {
-      TableName: process.env.DEVICE_TABLE_NAME!,
+      TableName: process.env.DEVICE_TABLE_NAME! || '*',
       IndexName: 'OwnerIDIndex', // Ensure this GSI is set up in the DynamoDB table
       KeyConditionExpression: 'ownerID = :ownerId',
       ExpressionAttributeValues: {
