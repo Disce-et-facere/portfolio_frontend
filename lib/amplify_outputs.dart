@@ -1,9 +1,9 @@
 const amplifyConfig = r'''{
   "auth": {
-    "user_pool_id": "eu-central-1_kpETugB0I",
+    "user_pool_id": "eu-central-1_8CahOmFtu",
     "aws_region": "eu-central-1",
-    "user_pool_client_id": "7u6d52qq1tc9geof7h7g2ist21",
-    "identity_pool_id": "eu-central-1:18d05650-481e-4e2c-9f1f-f575dff65ef0",
+    "user_pool_client_id": "607439gcflutsmha0cfd3vri08",
+    "identity_pool_id": "eu-central-1:e63e7105-19ca-4765-aa6e-75459a4bd023",
     "mfa_methods": [],
     "standard_required_attributes": [
       "email"
@@ -14,7 +14,6 @@ const amplifyConfig = r'''{
     "user_verification_types": [
       "email"
     ],
-    "groups": [],
     "mfa_configuration": "NONE",
     "password_policy": {
       "min_length": 8,
@@ -26,7 +25,7 @@ const amplifyConfig = r'''{
     "unauthenticated_identities_enabled": true
   },
   "data": {
-    "url": "https://zfi7n4vozrhc7neyzel56iucfm.appsync-api.eu-central-1.amazonaws.com/graphql",
+    "url": "https://trmwgi2xcnafrgqnbattumvuei.appsync-api.eu-central-1.amazonaws.com/graphql",
     "aws_region": "eu-central-1",
     "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
     "authorization_types": [
@@ -141,5 +140,5 @@ const amplifyConfig = r'''{
       "nonModels": {}
     }
   },
-  "version": "1.3"
-}''';
+  "version": "1.1"
+  }''';
