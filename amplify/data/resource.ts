@@ -1,5 +1,4 @@
 import { type ClientSchema, a, defineData} from '@aws-amplify/backend';
-import { addTag } from '../resource-discovery/helper';
 
 export const schema = a.schema({
   telemetry: a
@@ -29,19 +28,3 @@ export const tableSchema = defineData({
     defaultAuthorizationMode: 'userPool',
   },
 });
-
-/**
- * Post-deployment tagging function for DynamoDB table.
- */
-export const tagDynamoDBTable = async () => {
-  const tableArn = process.env.AWS_DYNAMODB_TABLE_ARN; // ARN will be automatically set during deployment
-  const tableName = process.env.AWS_DYNAMODB_TABLE_NAME; // Name will be set during deployment
-
-  if (tableArn) {
-    await addTag(tableArn, 'ResourceType', 'DynamoDBTable');
-  }
-
-  if (tableName) {
-    await addTag(tableName, 'Output', 'TelemetryTableName');
-  }
-};
