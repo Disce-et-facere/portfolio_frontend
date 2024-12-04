@@ -1,54 +1,135 @@
-import AWS from 'aws-sdk';
-import { getResourceArn } from '../resource-discovery/helper';
+import * as cdk from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import * as apigatewayv2 from 'aws-cdk-lib/aws-apigatewayv2';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as integrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
+import * as iam from 'aws-cdk-lib/aws-iam';
 
-const apiGateway = new AWS.ApiGatewayV2();
+interface ApiGatewayProps {
+  webAppUrl: string;
+  createDeviceLambdaArn: string;
+  fetchDevicesLambdaArn: string;
+  deleteDeviceLambdaArn: string;
+  issuerUrl: string;
+  appClientId: string;
+}
 
-export const handler = async (): Promise<void> => {
-  try {
-    // Fetch necessary ARNs and URLs dynamically
-    const createDeviceArn = await getResourceArn('ResourceType', 'CreateDeviceFunction');
-    const fetchDevicesArn = await getResourceArn('ResourceType', 'FetchDevicesFunction');
-    const cognitoUserPoolArn = await getResourceArn('ResourceType', 'CognitoUserPool');
-    const cognitoIssuerUrl = `https://${cognitoUserPoolArn?.split(':')[5]}.amazonaws.com/${cognitoUserPoolArn?.split('/').pop()}`;
-    const webAppUrl = await getResourceArn('ResourceType', 'WebAppURL');
+export class ApiGatewayStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props: ApiGatewayProps) {
+    super(scope, id);
 
-    if (!createDeviceArn || !fetchDevicesArn || !cognitoIssuerUrl || !webAppUrl) {
-      throw new Error('Required resources are missing.');
-    }
+    const {
+      webAppUrl,
+      createDeviceLambdaArn,
+      fetchDevicesLambdaArn,
+      deleteDeviceLambdaArn,
+      issuerUrl,
+      appClientId,
+    } = props;
 
-    // Define JWT authorizer
-    const authorizer = await apiGateway.createAuthorizer({
-      ApiId: 'YourApiId', // Replace with actual API Gateway ID
-      AuthorizerType: 'JWT',
-      IdentitySource: ['$request.header.Authorization'],
-      Name: 'CognitoJWTAuthorizer',
-      JwtConfiguration: {
-        Issuer: cognitoIssuerUrl,
-        Audience: ['YourCognitoAppClientId'], // Replace with actual App Client ID
+    // Helper function to create JWT authorizer with bind method
+    const createJwtAuthorizer = (httpApi: apigatewayv2.HttpApi) => {
+      const authorizer = new apigatewayv2.HttpAuthorizer(this, `${httpApi.node.id}-Authorizer`, {
+        httpApi,
+        type: apigatewayv2.HttpAuthorizerType.JWT,
+        identitySource: ['$request.header.Authorization'],
+        jwtIssuer: issuerUrl,
+        jwtAudience: [appClientId],
+      });
+
+      return {
+        bind: () => ({
+          authorizationType: 'JWT',
+          authorizerId: authorizer.authorizerId,
+        }),
+      };
+    };
+
+    // Helper function to add routes
+    const addRoutes = (
+      api: apigatewayv2.HttpApi,
+      integration: apigatewayv2.HttpRouteIntegration,
+      methods: apigatewayv2.HttpMethod[],
+      authorizer?: ReturnType<typeof createJwtAuthorizer>
+    ) => {
+      api.addRoutes({
+        path: '/',
+        methods,
+        integration,
+        authorizer,
+      });
+
+      // Add CORS OPTIONS route
+      api.addRoutes({
+        path: '/',
+        methods: [apigatewayv2.HttpMethod.OPTIONS],
+        integration: new integrations.HttpUrlIntegration(`${api.node.id}-OptionsIntegration`, webAppUrl),
+      });
+    };
+
+    // **API 1: CreateDevice API**
+    const createDeviceApi = new apigatewayv2.HttpApi(this, 'CreateDeviceApi', {
+      corsPreflight: {
+        allowOrigins: [webAppUrl],
+        allowHeaders: ['content-type', 'authorization'],
+        allowMethods: [apigatewayv2.CorsHttpMethod.OPTIONS, apigatewayv2.CorsHttpMethod.POST],
       },
-    }).promise();
+    });
 
-    // Set up routes for CreateDevice
-    await apiGateway.createRoute({
-      ApiId: 'YourApiId', // Replace with actual API Gateway ID
-      RouteKey: 'POST /',
-      Target: `integrations/${createDeviceArn}`,
-      AuthorizationType: 'JWT',
-      AuthorizerId: authorizer.AuthorizerId,
-    }).promise();
+    const createDeviceLambda = lambda.Function.fromFunctionArn(this, 'CreateDeviceFunction', createDeviceLambdaArn);
 
-    // Set up routes for FetchDevices
-    await apiGateway.createRoute({
-      ApiId: 'YourApiId', // Replace with actual API Gateway ID
-      RouteKey: 'GET /',
-      Target: `integrations/${fetchDevicesArn}`,
-      AuthorizationType: 'JWT',
-      AuthorizerId: authorizer.AuthorizerId,
-    }).promise();
+    const createDeviceAuthorizer = createJwtAuthorizer(createDeviceApi);
 
-    console.log('API Gateway setup completed.');
-  } catch (error) {
-    console.error('Error setting up API Gateway:', error);
-    throw error;
+    addRoutes(createDeviceApi, new integrations.HttpLambdaIntegration('CreateDeviceIntegration', createDeviceLambda), [
+      apigatewayv2.HttpMethod.POST,
+    ], createDeviceAuthorizer);
+
+    // Grant permissions to API Gateway to invoke Lambda
+    createDeviceLambda.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));
+
+    // **API 2: FetchDevices API**
+    const fetchDevicesApi = new apigatewayv2.HttpApi(this, 'FetchDevicesApi', {
+      corsPreflight: {
+        allowOrigins: [webAppUrl],
+        allowHeaders: ['content-type', 'authorization'],
+        allowMethods: [apigatewayv2.CorsHttpMethod.OPTIONS, apigatewayv2.CorsHttpMethod.GET],
+      },
+    });
+
+    const fetchDevicesLambda = lambda.Function.fromFunctionArn(this, 'FetchDevicesFunction', fetchDevicesLambdaArn);
+
+    const fetchDevicesAuthorizer = createJwtAuthorizer(fetchDevicesApi);
+
+    addRoutes(fetchDevicesApi, new integrations.HttpLambdaIntegration('FetchDevicesIntegration', fetchDevicesLambda), [
+      apigatewayv2.HttpMethod.GET,
+    ], fetchDevicesAuthorizer);
+
+    // Grant permissions to API Gateway to invoke Lambda
+    fetchDevicesLambda.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));
+
+    // **API 3: DeleteDevice API**
+    const deleteDeviceApi = new apigatewayv2.HttpApi(this, 'DeleteDeviceApi', {
+      corsPreflight: {
+        allowOrigins: [webAppUrl],
+        allowHeaders: ['content-type', 'authorization'],
+        allowMethods: [apigatewayv2.CorsHttpMethod.OPTIONS, apigatewayv2.CorsHttpMethod.DELETE],
+      },
+    });
+
+    const deleteDeviceLambda = lambda.Function.fromFunctionArn(this, 'DeleteDeviceFunction', deleteDeviceLambdaArn);
+
+    const deleteDeviceAuthorizer = createJwtAuthorizer(deleteDeviceApi);
+
+    addRoutes(deleteDeviceApi, new integrations.HttpLambdaIntegration('DeleteDeviceIntegration', deleteDeviceLambda), [
+      apigatewayv2.HttpMethod.DELETE,
+    ], deleteDeviceAuthorizer);
+
+    // Grant permissions to API Gateway to invoke Lambda
+    deleteDeviceLambda.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));
+
+    // Outputs
+    new cdk.CfnOutput(this, 'CreateDeviceApiEndpoint', { value: createDeviceApi.apiEndpoint });
+    new cdk.CfnOutput(this, 'FetchDevicesApiEndpoint', { value: fetchDevicesApi.apiEndpoint });
+    new cdk.CfnOutput(this, 'DeleteDeviceApiEndpoint', { value: deleteDeviceApi.apiEndpoint });
   }
-};
+}

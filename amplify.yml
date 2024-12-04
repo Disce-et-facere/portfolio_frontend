@@ -5,10 +5,6 @@ backend:
       commands:
         # Install dependencies for backend
         - npm ci --cache .npm --prefer-offline
-        # Install the AWS SDK for post-deployment tasks
-        - npm install aws-sdk
-        - npm install typescript --save-dev
-        - npx tsc
         # Install dependencies for each Lambda function
         - for dir in amplify/lambdas/*; do
             if [ -d "$dir" ]; then
@@ -18,9 +14,6 @@ backend:
           done
         # Deploy the backend using ampx
         - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID --outputs-format dart
-        # Run post-deployment tasks
-        - echo "Running post-deployment script..."
-        - node amplify/post-deploy.ts
 frontend:
   phases:
     preBuild:
