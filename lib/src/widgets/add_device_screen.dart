@@ -15,8 +15,8 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   final TextEditingController _deviceNameController = TextEditingController();
   final TextEditingController _aliasController = TextEditingController();
   bool _isLoading = false;
-
-  final String apiUrl = const String.fromEnvironment('ADD_DEVICE_ENDPOINT');
+  final String apiUrl = 'https://i54j20zyi1.execute-api.eu-central-1.amazonaws.com';
+  //final String apiUrl = const String.fromEnvironment('ADD_DEVICE_ENDPOINT');
 
   String? thingArn;
   String? iotEndpoint;
