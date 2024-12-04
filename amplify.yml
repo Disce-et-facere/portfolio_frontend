@@ -29,11 +29,7 @@ frontend:
         - flutter pub get
     build:
       commands:
-        - echo "Using environment variables from Amplify secrets..."
-        - flutter build web \
-            --dart-define=DEVICE_TABLE_NAME=$DEVICE_TABLE_NAME \
-            --dart-define=IOT_CORE_ENDPOINT=$IOT_CORE_ENDPOINT \
-            --dart-define=WEB_APP_URL=$WEB_APP_URL
+
   artifacts:
     baseDirectory: build/web
     files:
