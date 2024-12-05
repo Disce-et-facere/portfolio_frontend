@@ -15,43 +15,48 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   final TextEditingController _deviceNameController = TextEditingController();
   final TextEditingController _aliasController = TextEditingController();
   bool _isLoading = false;
+  String? ownerId;
   final String apiUrl = 'https://i54j20zyi1.execute-api.eu-central-1.amazonaws.com';
-  //final String apiUrl = const String.fromEnvironment('ADD_DEVICE_ENDPOINT');
 
-  String? thingArn;
+  String? deviceId;
   String? iotEndpoint;
-  String? certificatePem;
-  String? privateKey;
-  String? publicKey;
+  String? telemetryTopic;
+  String? shadowGetTopic;
+  String? shadowUpdateTopic;
+  String? shadowDeltaTopic;
 
-Future<String> _getAccessToken() async {
-  try {
-    final cognitoPlugin = Amplify.Auth.getPlugin(AmplifyAuthCognito.pluginKey);
+  Future<String?> _getOwnerId() async {
+    try {
+      final attributes = await Amplify.Auth.fetchUserAttributes();
 
-    final cognitoSession = await cognitoPlugin.fetchAuthSession();
+      // Look for "custom:OwnerID" (case-sensitive)
+      final ownerAttr = attributes.firstWhere(
+        (attr) => attr.userAttributeKey == CognitoUserAttributeKey.custom('OwnerID'),
+        orElse: () => AuthUserAttribute(
+          userAttributeKey: CognitoUserAttributeKey.custom('OwnerID'),
+          value: '',
+        ),
+      );
 
-    if (!cognitoSession.isSignedIn) {
-      debugPrint('User is not signed in.');
-      return "NOT SIGNED IN!";
+      return ownerAttr.value.isNotEmpty ? ownerAttr.value : null;
+    } catch (e) {
+      debugPrint('Error fetching OwnerID: $e');
+      return null;
     }
-    final tokens = cognitoSession.userPoolTokensResult.value;
-    final String accessToken = tokens.accessToken.raw;
-
-    debugPrint('Access Token: $accessToken');
-
-    return accessToken;
-
-  } on AuthException catch (e) {
-    debugPrint('Error fetching access token: ${e.message}');
-    return "NO ACCESS TOKEN!";
   }
-}
-
+  
   Future<void> _addDevice() async {
     final deviceName = _deviceNameController.text.trim();
     if (deviceName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a device name')),
+      );
+      return;
+    }
+
+    if (ownerId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('OwnerID is not set. Cannot add device.')),
       );
       return;
     }
@@ -68,27 +73,20 @@ Future<String> _getAccessToken() async {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
         },
-        body: jsonEncode({
-          "deviceName": deviceName
-      }),
+        body: jsonEncode({"deviceName": deviceName}),
       );
-      // for debugging
-      debugPrint('Response received - Status: ${response.statusCode}, Body: ${response.body}',);
 
       if (response.statusCode == 200) {
-        try {
-          final data = jsonDecode(response.body);
-          setState(() {
-            thingArn = data['thingArn'];
-            iotEndpoint = data['iotEndpoint'];
-            certificatePem = data['certificates']['certificatePem'];
-            privateKey = data['certificates']['privateKey'];
-            publicKey = data['certificates']['publicKey'];
-          });
-        } catch (e) {
-          debugPrint('Error parsing response JSON: $e');
-          throw Exception('Error parsing response JSON: $e');
-        }
+        final data = jsonDecode(response.body);
+        final arnParts = (data['thingArn'] as String).split(':');
+        setState(() {
+          deviceId = arnParts.last;
+          iotEndpoint = data['iotEndpoint'];
+          telemetryTopic = '$deviceId/telemetry';
+          shadowGetTopic = '\$aws/things/$deviceId/shadow/get';
+          shadowUpdateTopic = '\$aws/things/$deviceId/shadow/update';
+          shadowDeltaTopic = '\$aws/things/$deviceId/shadow/update/delta';
+        });
       } else {
         debugPrint('Failed to add device. Status: ${response.statusCode}');
         throw Exception('Failed to add device. Status: ${response.statusCode}');
@@ -103,6 +101,19 @@ Future<String> _getAccessToken() async {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _fetchOwnerId();
+  }
+
+  Future<void> _fetchOwnerId() async {
+    final fetchedOwnerId = await _getOwnerId();
+    setState(() {
+      ownerId = fetchedOwnerId;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -110,12 +121,12 @@ Future<String> _getAccessToken() async {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
+          : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (thingArn == null) ...[
+                  if (deviceId == null) ...[
                     TextField(
                       controller: _deviceNameController,
                       decoration: const InputDecoration(
@@ -139,26 +150,33 @@ Future<String> _getAccessToken() async {
                       ),
                     ),
                   ] else ...[
-                    Text('Thing ARN: $thingArn'),
-                    Text('IoT Endpoint: $iotEndpoint'),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        _downloadFile(certificatePem!, 'certificate.pem');
-                      },
-                      child: const Text('Download Certificate'),
+                    _buildResponseBox(
+                      'DeviceID',
+                      deviceId!,
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        _downloadFile(privateKey!, 'private.key');
-                      },
-                      child: const Text('Download Private Key'),
+                    _buildResponseBox(
+                      'OwnerID',
+                      ownerId ?? 'Unavailable',
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        _downloadFile(publicKey!, 'public.key');
-                      },
-                      child: const Text('Download Public Key'),
+                    _buildResponseBox(
+                      'MQTT Endpoint',
+                      iotEndpoint ?? 'Unavailable',
+                    ),
+                    _buildResponseBox(
+                      'Telemetry Topic',
+                      telemetryTopic ?? 'Unavailable',
+                    ),
+                    _buildResponseBox(
+                      'Shadow Get Topic',
+                      shadowGetTopic ?? 'Unavailable',
+                    ),
+                    _buildResponseBox(
+                      'Shadow Update Topic',
+                      shadowUpdateTopic ?? 'Unavailable',
+                    ),
+                    _buildResponseBox(
+                      'Shadow Delta Topic',
+                      shadowDeltaTopic ?? 'Unavailable',
                     ),
                   ],
                 ],
@@ -167,14 +185,50 @@ Future<String> _getAccessToken() async {
     );
   }
 
-  void _downloadFile(String content, String filename) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Downloading $filename'),
-          duration: const Duration(seconds: 5),
-        ),
-      );
+  Widget _buildResponseBox(String title, String content) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Text(content),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<String> _getAccessToken() async {
+    try {
+      final cognitoPlugin = Amplify.Auth.getPlugin(AmplifyAuthCognito.pluginKey);
+      final cognitoSession = await cognitoPlugin.fetchAuthSession();
+      final tokens = cognitoSession.userPoolTokensResult.value;
+      return tokens.accessToken.raw;
+    } catch (e) {
+      debugPrint('Error fetching access token: $e');
+      return '';
     }
   }
 }
