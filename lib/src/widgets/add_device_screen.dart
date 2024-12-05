@@ -16,9 +16,8 @@ class AddDeviceScreen extends StatefulWidget {
 class _AddDeviceScreenState extends State<AddDeviceScreen> {
   final TextEditingController _deviceNameController = TextEditingController();
   final TextEditingController _updatePeriodController = TextEditingController();
+  String _ownerID = '';
   bool _isLoading = false;
-  String? ownerId;
-  final String apiUrl = 'https://i54j20zyi1.execute-api.eu-central-1.amazonaws.com';
 
   String? deviceId;
   String? iotEndpoint;
@@ -30,33 +29,30 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   String? privateKey;
   String? caCertificate;
 
+  final String apiUrl = 'https://i54j20zyi1.execute-api.eu-central-1.amazonaws.com';
+
   @override
   void initState() {
     super.initState();
-    _fetchOwnerId();
+    _loadOwnerID();
   }
 
-  Future<void> _fetchOwnerId() async {
+  Future<void> _loadOwnerID() async {
     try {
       final attributes = await Amplify.Auth.fetchUserAttributes();
-      final ownerAttr = attributes.firstWhere(
+      final ownerIDAttribute = attributes.firstWhere(
         (attr) => attr.userAttributeKey.key == 'custom:OwnerID',
         orElse: () => const AuthUserAttribute(
           userAttributeKey: CognitoUserAttributeKey.custom('OwnerID'),
           value: '',
         ),
       );
-
       setState(() {
-        ownerId = ownerAttr.value.isNotEmpty ? ownerAttr.value : null;
+        _ownerID = ownerIDAttribute.value;
       });
-
-      debugPrint(ownerId != null ? 'Fetched OwnerID: $ownerId' : 'OwnerID not set.');
+      debugPrint('Loaded OwnerID: $_ownerID');
     } catch (e) {
-      debugPrint('Error fetching OwnerID: $e');
-      setState(() {
-        ownerId = null;
-      });
+      debugPrint('Error loading OwnerID: $e');
     }
   }
 
@@ -74,8 +70,9 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
       return;
     }
 
-    if (ownerId == null || ownerId!.isEmpty) {
+    if (_ownerID.isEmpty) {
       _showSnackBar('OwnerID is not set. Cannot add device.');
+      debugPrint('OwnerID is empty.');
       return;
     }
 
@@ -96,7 +93,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
         body: jsonEncode({
           "deviceName": deviceName,
           "updatePeriod": updatePeriod,
-          "ownerID": ownerId,
+          "ownerID": _ownerID,
         }),
       );
 
@@ -147,19 +144,6 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
     );
   }
 
-  Future<void> _downloadCertificate(String content, String fileName) async {
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/$fileName');
-      await file.writeAsString(content);
-
-      _showSnackBar('$fileName downloaded to ${directory.path}');
-    } catch (e) {
-      debugPrint('Error saving $fileName: $e');
-      _showSnackBar('Error downloading $fileName: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -175,7 +159,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                 children: [
                   if (deviceId == null) ...[
                     Text(
-                      'Owner ID: ${ownerId ?? "Not Set"}',
+                      'Owner ID: ${_ownerID.isNotEmpty ? _ownerID : "Not Set"}',
                       style: const TextStyle(color: Colors.red),
                     ),
                     const SizedBox(height: 16),
@@ -198,34 +182,14 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                     const SizedBox(height: 24),
                     Center(
                       child: ElevatedButton(
-                        onPressed: ownerId != null && ownerId!.isNotEmpty
-                            ? _addDevice
-                            : null,
+                        onPressed: _ownerID.isNotEmpty ? _addDevice : null,
                         child: const Text('Add Device'),
                       ),
                     ),
                   ] else ...[
                     _buildResponseBox('DeviceID', deviceId!),
-                    _buildResponseBox('OwnerID', ownerId ?? 'Unavailable'),
+                    _buildResponseBox('OwnerID', _ownerID),
                     _buildResponseBox('MQTT Endpoint', iotEndpoint ?? 'Unavailable'),
-                    ElevatedButton(
-                      onPressed: certificatePem != null
-                          ? () => _downloadCertificate(certificatePem!, 'device.crt')
-                          : null,
-                      child: const Text('Download Device Certificate (device.crt)'),
-                    ),
-                    ElevatedButton(
-                      onPressed: privateKey != null
-                          ? () => _downloadCertificate(privateKey!, 'private.key')
-                          : null,
-                      child: const Text('Download Private Key (private.key)'),
-                    ),
-                    ElevatedButton(
-                      onPressed: caCertificate != null
-                          ? () => _downloadCertificate(caCertificate!, 'ca.pem')
-                          : null,
-                      child: const Text('Download CA Certificate (ca.pem)'),
-                    ),
                   ],
                 ],
               ),
