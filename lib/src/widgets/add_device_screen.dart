@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
-import 'dart:io';
+import 'dart:html' as html; // Web-specific import
 import 'package:http/http.dart' as http;
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
@@ -138,15 +137,19 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
     }
   }
 
-  Future<void> _downloadCertificate(String content, String fileName) async {
+  void _downloadCertificate(String content, String fileName) {
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/$fileName');
-      await file.writeAsString(content);
-
-      _showSnackBar('$fileName downloaded to ${directory.path}');
+      final bytes = utf8.encode(content);
+      final blob = html.Blob([bytes]);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      final anchor = html.AnchorElement(href: url)
+        ..target = 'blank'
+        ..download = fileName;
+      anchor.click();
+      html.Url.revokeObjectUrl(url);
+      _showSnackBar('$fileName downloaded successfully.');
     } catch (e) {
-      debugPrint('Error saving $fileName: $e');
+      debugPrint('Error downloading $fileName: $e');
       _showSnackBar('Error downloading $fileName: $e');
     }
   }

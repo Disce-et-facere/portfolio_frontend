@@ -77,6 +77,7 @@ export const handler = async (
 
     return {
       statusCode: 200,
+      headers: generateCORSHeaders(),
       body: JSON.stringify({ devices }),
     };
   } catch (error) {
