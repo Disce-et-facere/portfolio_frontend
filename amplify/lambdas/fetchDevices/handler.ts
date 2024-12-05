@@ -38,11 +38,12 @@ export const handler = async (
       KeyConditionExpression: 'ownerID = :ownerId',
       ExpressionAttributeNames: {
         '#ts': 'timestamp', // Alias 'timestamp'
+        '#dt': 'data', // Alias for data
       },
       ExpressionAttributeValues: {
         ':ownerId': ownerId,
       },
-      ProjectionExpression: 'device_id, #ts, data', // Use the alias here
+      ProjectionExpression: 'device_id, #ts, #dt', // Use the alias here
     };
 
     const result = await dynamodb.query(params).promise();
