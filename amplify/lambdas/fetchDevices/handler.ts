@@ -4,7 +4,7 @@ import AWS from 'aws-sdk';
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 
 const generateCORSHeaders = () => ({
-  'Access-Control-Allow-Origin': '*', // Adjust to your frontend domain if needed
+  'Access-Control-Allow-Origin': process.env.WEB_APP_URL!,
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Methods': 'OPTIONS,POST',
 });
@@ -12,15 +12,15 @@ const generateCORSHeaders = () => ({
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 204,
-      headers: generateCORSHeaders(),
-      body: '',
-    };
-  }
-
   try {
+    if (event.httpMethod === 'OPTIONS') {
+      return {
+        statusCode: 204,
+        headers: generateCORSHeaders(),
+        body: '',
+      };
+    }
+
     const body = JSON.parse(event.body || '{}');
     const ownerId = body.ownerID;
 
@@ -33,7 +33,7 @@ export const handler = async (
     }
 
     const params = {
-      TableName: process.env.DEVICE_TABLE_NAME!,
+      TableName: 'deviceData',
       IndexName: 'OwnerIDIndex', // Use the GSI
       KeyConditionExpression: 'ownerID = :ownerId',
       ExpressionAttributeNames: {
