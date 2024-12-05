@@ -24,13 +24,16 @@ export const handler = async (
     // Hardcoded device ID for simplicity
     const deviceId = 'C2DD576A79F8';
 
-    const params = {
-      TableName: 'telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE',
+       const params = {
+      TableName: process.env.DEVICE_TABLE_NAME!,
       KeyConditionExpression: 'device_id = :deviceId',
       ExpressionAttributeValues: {
         ':deviceId': deviceId,
       },
-      ProjectionExpression: 'timestamp, data',
+      ExpressionAttributeNames: {
+        '#ts': 'timestamp', // Alias for reserved keyword
+      },
+      ProjectionExpression: 'device_id, #ts, data',
       ScanIndexForward: false, // Order by descending timestamp
       Limit: 1, // Fetch only the latest value
     };

@@ -25,12 +25,15 @@ export const handler = async (
     const deviceId = 'C2DD576A79F8';
 
     const params = {
-      TableName: 'telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE',
+      TableName: process.env.DEVICE_TABLE_NAME!,
       KeyConditionExpression: 'device_id = :deviceId',
       ExpressionAttributeValues: {
         ':deviceId': deviceId,
       },
-      ProjectionExpression: 'timestamp, data',
+      ExpressionAttributeNames: {
+        '#ts': 'timestamp', // Alias for reserved keyword
+      },
+      ProjectionExpression: 'device_id, #ts, data',
     };
 
     const result = await dynamodb.query(params).promise();
