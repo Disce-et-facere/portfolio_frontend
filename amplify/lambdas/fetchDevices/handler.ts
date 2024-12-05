@@ -4,7 +4,7 @@ import AWS from 'aws-sdk';
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 
 const generateCORSHeaders = () => ({
-  'Access-Control-Allow-Origin': process.env.WEB_APP_URL!,
+  'Access-Control-Allow-Origin': process.env.WEB_APP_URL || '*',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Methods': 'OPTIONS,POST',
 });
@@ -21,6 +21,9 @@ export const handler = async (
       };
     }
 
+    // Log incoming request for debugging
+    console.log('Incoming Event:', JSON.stringify(event, null, 2));
+
     const body = JSON.parse(event.body || '{}');
     const ownerId = body.ownerID;
 
@@ -33,19 +36,20 @@ export const handler = async (
     }
 
     const params = {
-      TableName: 'process.env.DEVICE_TABLE_NAME!',
+      TableName: process.env.DEVICE_TABLE_NAME!,
       IndexName: 'OwnerIDIndex', // Use the GSI
-      KeyConditionExpression: 'ownerID = :ownerId',
-      ExpressionAttributeNames: {
-        '#ts': 'timestamp', // Alias 'timestamp'
-      },
+      KeyConditionExpression: 'OwnerID = :ownerId',
       ExpressionAttributeValues: {
         ':ownerId': ownerId,
       },
-      ProjectionExpression: 'device_id, #ts, data', // Use the alias here
+      ProjectionExpression: 'device_id, timestamp, data',
     };
 
+    console.log('DynamoDB Query Params:', JSON.stringify(params, null, 2));
+
     const result = await dynamodb.query(params).promise();
+
+    console.log('DynamoDB Query Result:', JSON.stringify(result, null, 2));
 
     if (!result.Items || result.Items.length === 0) {
       return {
