@@ -57,7 +57,10 @@ const fetchDevicesLambda = backend.fetchDevices.resources.lambda;
 const dynamoDbReadPolicy = new iam.PolicyStatement({
   effect: iam.Effect.ALLOW,
   actions: ['dynamodb:Query', 'dynamodb:GetItem'],
-  resources: ['arn:aws:dynamodb:eu-central-1:891612540400:table/telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE'],
+  resources: [
+    'arn:aws:dynamodb:eu-central-1:891612540400:table/telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE',
+    'arn:aws:dynamodb:eu-central-1:891612540400:table/telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE/index/OwnerIDIndex',
+  ],
 });
 
 // Attach the policy to the fetchDevices Lambda
@@ -92,7 +95,10 @@ const fetchDeviceDataLambda = backend.fetchDeviceData.resources.lambda;
 const dynamoDbFetchDeviceDataPolicy = new iam.PolicyStatement({
   effect: iam.Effect.ALLOW,
   actions: ['dynamodb:Query', 'dynamodb:GetItem'],
-  resources: ['arn:aws:dynamodb:eu-central-1:891612540400:table/telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE'],
+  resources: [
+    'arn:aws:dynamodb:eu-central-1:891612540400:table/telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE',
+    'arn:aws:dynamodb:eu-central-1:891612540400:table/telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE/index/OwnerIDIndex',
+  ],
 });
 
 fetchDeviceDataLambda.addToRolePolicy(dynamoDbFetchDeviceDataPolicy);
