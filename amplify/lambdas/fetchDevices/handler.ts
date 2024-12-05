@@ -50,7 +50,7 @@ export const handler = async (
 
     if (!result.Items || result.Items.length === 0) {
       return {
-        statusCode: 200,
+        statusCode: 404,
         headers: generateCORSHeaders(),
         body: JSON.stringify({
           message: 'No devices in Database',
