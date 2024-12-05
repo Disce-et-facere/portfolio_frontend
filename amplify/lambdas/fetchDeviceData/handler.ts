@@ -35,14 +35,17 @@ export const handler = async (
 
     // Query DynamoDB using the GSI
     const params = {
-      TableName: 'telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE',
+      TableName: process.env.DEVICE_TABLE_NAME!,
       IndexName: 'OwnerIDIndex', // Use the GSI
-      KeyConditionExpression: 'ownerID = :ownerID AND device_id = :deviceID',
+      KeyConditionExpression: 'ownerID = :ownerId',
       ExpressionAttributeValues: {
-        ':ownerID': ownerId,
-        ':deviceID': deviceId,
+        ':ownerId': ownerId,
       },
-      ProjectionExpression: 'timestamp, data', // Retrieve only the necessary fields
+      ProjectionExpression: 'device_id, #ts, data',
+      ExpressionAttributeNames: {
+        '#ts': 'timestamp', // Alias 'timestamp' since it's reserved
+        '#data': 'data',    // Alias 'data' if it's reserved (double-check this)
+      },
     };
 
     const result = await dynamodb.query(params).promise();
