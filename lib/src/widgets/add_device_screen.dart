@@ -33,7 +33,11 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchOwnerId();
+    _initializeOwnerId();
+  }
+
+  Future<void> _initializeOwnerId() async {
+    await _fetchOwnerId();
   }
 
   Future<void> _fetchOwnerId() async {
@@ -189,7 +193,9 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                     const SizedBox(height: 24),
                     Center(
                       child: ElevatedButton(
-                        onPressed: _addDevice,
+                        onPressed: ownerId != null && ownerId!.isNotEmpty
+                            ? _addDevice
+                            : null,
                         child: const Text('Add Device'),
                       ),
                     ),

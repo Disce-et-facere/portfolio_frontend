@@ -5,22 +5,23 @@ const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const iot = new AWS.Iot();
 
 const generateCORSHeaders = () => ({
-  "Access-Control-Allow-Origin": process.env.WEB_APP_URL!,
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Allow-Methods": "OPTIONS,DELETE",
+  'Access-Control-Allow-Origin': process.env.WEB_APP_URL!,
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Methods': 'OPTIONS,DELETE',
 });
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
     // Handle OPTIONS preflight request
-    if (event.httpMethod === "OPTIONS") {
+    if (event.httpMethod === 'OPTIONS') {
       return {
         statusCode: 204,
         headers: generateCORSHeaders(),
-        body: "",
+        body: '',
       };
     }
 
+    // Parse the incoming body
     const { ownerId, deviceId } = JSON.parse(event.body || '{}');
 
     if (!ownerId || !deviceId) {
@@ -34,10 +35,10 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     const tableName = process.env.DEVICE_TABLE_NAME;
 
     if (!tableName) {
-      throw new Error('DynamoDB Table Name not set in environment variables.');
+      throw new Error('DynamoDB Table Name is not set in environment variables.');
     }
 
-    // Step 1: Remove all records from DynamoDB for the deviceId
+    // Step 1: Query DynamoDB for all records with deviceId and ownerId
     const queryParams = {
       TableName: tableName,
       KeyConditionExpression: 'device_id = :deviceId AND ownerID = :ownerId',
@@ -49,7 +50,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     const queryResult = await dynamoDb.query(queryParams).promise();
 
-    if (queryResult.Items) {
+    if (queryResult.Items && queryResult.Items.length > 0) {
       const deletePromises = queryResult.Items.map((item) =>
         dynamoDb
           .delete({
@@ -59,17 +60,19 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           .promise()
       );
       await Promise.all(deletePromises);
+    } else {
+      console.log(`No records found in DynamoDB for deviceId: ${deviceId} and ownerId: ${ownerId}`);
     }
 
     // Step 2: Remove the device from IoT Core
-    await iot
-      .deleteThing({
-        thingName: deviceId,
-      })
-      .promise();
+    try {
+      await iot.deleteThing({ thingName: deviceId }).promise();
+      console.log(`Device ${deviceId} removed from IoT Core.`);
+    } catch (error) {
+      console.warn(`Failed to delete device from IoT Core. Device ${deviceId} may not exist.`);
+    }
 
-    console.log(`Device ${deviceId} removed from IoT Core and DynamoDB.`);
-
+    // Success response
     return {
       statusCode: 200,
       headers: generateCORSHeaders(),
