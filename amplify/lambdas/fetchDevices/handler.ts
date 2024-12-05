@@ -4,7 +4,7 @@ import AWS from 'aws-sdk';
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 
 const generateCORSHeaders = () => ({
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': process.env.WEB_APP_URL!,
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Methods': 'OPTIONS,POST',
 });
@@ -33,18 +33,20 @@ export const handler = async (
     }
 
     const params = {
-      TableName: 'telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE',
+      TableName: process.env.DEVICE_TABLE_NAME!,
       IndexName: 'OwnerIDIndex', // Use the GSI
       KeyConditionExpression: 'ownerID = :ownerId',
       ExpressionAttributeNames: {
-        '#ts': 'timestamp', // Alias 'timestamp'
-        '#dt': 'data', // Alias for data
+        '#ts': 'timestamp', // Alias reserved keyword 'timestamp'
+        '#data': 'data',    // Alias reserved keyword 'data'
       },
       ExpressionAttributeValues: {
         ':ownerId': ownerId,
       },
-      ProjectionExpression: 'device_id, #ts, #dt', // Use the alias here
+      ProjectionExpression: 'device_id, #ts, #data', // Retrieve fields
     };
+
+    console.log('DynamoDB Query Params:', JSON.stringify(params, null, 2));
 
     const result = await dynamodb.query(params).promise();
 
@@ -58,6 +60,7 @@ export const handler = async (
       };
     }
 
+    // Process results
     const latestDevices = result.Items.reduce<Record<string, any>>((acc, item) => {
       const { device_id, timestamp } = item;
 
