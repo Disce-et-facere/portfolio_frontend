@@ -24,7 +24,7 @@ export const handler = async (
     // Hardcoded device ID for simplicity
     const deviceId = 'C2DD576A79F8';
 
-       const params = {
+    const params = {
       TableName: process.env.DEVICE_TABLE_NAME!,
       KeyConditionExpression: 'device_id = :deviceId',
       ExpressionAttributeValues: {
@@ -32,8 +32,9 @@ export const handler = async (
       },
       ExpressionAttributeNames: {
         '#ts': 'timestamp', // Alias for reserved keyword
+        '#data': 'data',    // Alias for reserved keyword
       },
-      ProjectionExpression: 'device_id, #ts, data',
+      ProjectionExpression: 'device_id, #ts, #data',
       ScanIndexForward: false, // Order by descending timestamp
       Limit: 1, // Fetch only the latest value
     };

@@ -32,8 +32,9 @@ export const handler = async (
       },
       ExpressionAttributeNames: {
         '#ts': 'timestamp', // Alias for reserved keyword
+        '#data': 'data',    // Alias for reserved keyword
       },
-      ProjectionExpression: 'device_id, #ts, data',
+      ProjectionExpression: 'device_id, #ts, #data',
     };
 
     const result = await dynamodb.query(params).promise();
