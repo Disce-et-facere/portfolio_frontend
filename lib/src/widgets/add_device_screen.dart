@@ -29,7 +29,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   String? privateKey;
   String? caCertificate;
 
-  final String apiUrl = 'https://i54j20zyi1.execute-api.eu-central-1.amazonaws.com';
+  final String apiUrl = 'https://i54j20zyi1.execute-api.eu-central-1.amazonaws.com/';
 
   @override
   void initState() {
@@ -41,9 +41,9 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
     try {
       final attributes = await Amplify.Auth.fetchUserAttributes();
       final ownerIDAttribute = attributes.firstWhere(
-        (attr) => attr.userAttributeKey.key == 'custom:OwnerID',
+        (attr) => attr.userAttributeKey == CognitoUserAttributeKey.custom('custom:OwnerID'),
         orElse: () => const AuthUserAttribute(
-          userAttributeKey: CognitoUserAttributeKey.custom('OwnerID'),
+          userAttributeKey: CognitoUserAttributeKey.custom('custom:OwnerID'),
           value: '',
         ),
       );
