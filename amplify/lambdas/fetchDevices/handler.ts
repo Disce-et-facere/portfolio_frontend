@@ -60,7 +60,7 @@ export const handler = async (
         deviceId,
         latestValue: {
           timestamp: latestDevice.timestamp,
-          data: latestDevice.data,
+          data: latestDevice.Data,
         },
       }),
     };

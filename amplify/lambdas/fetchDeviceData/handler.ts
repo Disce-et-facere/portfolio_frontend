@@ -51,7 +51,7 @@ export const handler = async (
 
     const data = result.Items.map((item: any) => ({
       timestamp: item.timestamp,
-      data: item.data,
+      data: item.Data,
     }));
 
     return {
