@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
@@ -24,27 +26,27 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   String? shadowGetTopic;
   String? shadowUpdateTopic;
   String? shadowDeltaTopic;
+  String? certificatePem;
+  String? privateKey;
+  String? caCertificate;
 
   Future<String?> _getOwnerId() async {
     try {
       final attributes = await Amplify.Auth.fetchUserAttributes();
-
-      // Look for "custom:OwnerID" (case-sensitive)
       final ownerAttr = attributes.firstWhere(
-        (attr) => attr.userAttributeKey == CognitoUserAttributeKey.custom('OwnerID'),
+        (attr) => attr.userAttributeKey.key == 'custom:OwnerID',
         orElse: () => AuthUserAttribute(
           userAttributeKey: CognitoUserAttributeKey.custom('OwnerID'),
           value: '',
         ),
       );
-
       return ownerAttr.value.isNotEmpty ? ownerAttr.value : null;
     } catch (e) {
       debugPrint('Error fetching OwnerID: $e');
       return null;
     }
   }
-  
+
   Future<void> _addDevice() async {
     final deviceName = _deviceNameController.text.trim();
     if (deviceName.isEmpty) {
@@ -86,6 +88,9 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
           shadowGetTopic = '\$aws/things/$deviceId/shadow/get';
           shadowUpdateTopic = '\$aws/things/$deviceId/shadow/update';
           shadowDeltaTopic = '\$aws/things/$deviceId/shadow/update/delta';
+          certificatePem = data['certificates']['certificatePem'];
+          privateKey = data['certificates']['privateKey'];
+          caCertificate = data['certificates']['caCertificate'];
         });
       } else {
         debugPrint('Failed to add device. Status: ${response.statusCode}');
@@ -97,6 +102,27 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _downloadCertificate(String content, String fileName) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsString(content);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$fileName downloaded to ${directory.path}')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error saving $fileName: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error downloading $fileName: $e')),
+        );
+      }
     }
   }
 
@@ -150,33 +176,26 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                       ),
                     ),
                   ] else ...[
-                    _buildResponseBox(
-                      'DeviceID',
-                      deviceId!,
+                    _buildResponseBox('DeviceID', deviceId!),
+                    _buildResponseBox('OwnerID', ownerId ?? 'Unavailable'),
+                    _buildResponseBox('MQTT Endpoint', iotEndpoint ?? 'Unavailable'),
+                    ElevatedButton(
+                      onPressed: certificatePem != null
+                          ? () => _downloadCertificate(certificatePem!, 'device.crt')
+                          : null,
+                      child: const Text('Download Device Certificate (device.crt)'),
                     ),
-                    _buildResponseBox(
-                      'OwnerID',
-                      ownerId ?? 'Unavailable',
+                    ElevatedButton(
+                      onPressed: privateKey != null
+                          ? () => _downloadCertificate(privateKey!, 'private.key')
+                          : null,
+                      child: const Text('Download Private Key (private.key)'),
                     ),
-                    _buildResponseBox(
-                      'MQTT Endpoint',
-                      iotEndpoint ?? 'Unavailable',
-                    ),
-                    _buildResponseBox(
-                      'Telemetry Topic',
-                      telemetryTopic ?? 'Unavailable',
-                    ),
-                    _buildResponseBox(
-                      'Shadow Get Topic',
-                      shadowGetTopic ?? 'Unavailable',
-                    ),
-                    _buildResponseBox(
-                      'Shadow Update Topic',
-                      shadowUpdateTopic ?? 'Unavailable',
-                    ),
-                    _buildResponseBox(
-                      'Shadow Delta Topic',
-                      shadowDeltaTopic ?? 'Unavailable',
+                    ElevatedButton(
+                      onPressed: caCertificate != null
+                          ? () => _downloadCertificate(caCertificate!, 'ca.pem')
+                          : null,
+                      child: const Text('Download CA Certificate (ca.pem)'),
                     ),
                   ],
                 ],
