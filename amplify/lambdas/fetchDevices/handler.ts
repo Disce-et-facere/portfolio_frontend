@@ -4,7 +4,7 @@ import AWS from 'aws-sdk';
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 
 const generateCORSHeaders = () => ({
-  'Access-Control-Allow-Origin': process.env.WEB_APP_URL!,
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Methods': 'OPTIONS,POST',
 });
@@ -21,32 +21,19 @@ export const handler = async (
       };
     }
 
-    const body = JSON.parse(event.body || '{}');
-    const ownerId = body.ownerID;
-
-    if (!ownerId) {
-      return {
-        statusCode: 400,
-        headers: generateCORSHeaders(),
-        body: JSON.stringify({ error: 'ownerID is required' }),
-      };
-    }
+    // Hardcoded device ID for simplicity
+    const deviceId = 'C2DD576A79F8';
 
     const params = {
-      TableName: process.env.DEVICE_TABLE_NAME!,
-      IndexName: 'OwnerIDIndex', // Use the GSI
-      KeyConditionExpression: 'ownerID = :ownerId',
-      ExpressionAttributeNames: {
-        '#ts': 'timestamp', // Alias reserved keyword 'timestamp'
-        '#data': 'data',    // Alias reserved keyword 'data'
-      },
+      TableName: 'telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE',
+      KeyConditionExpression: 'device_id = :deviceId',
       ExpressionAttributeValues: {
-        ':ownerId': ownerId,
+        ':deviceId': deviceId,
       },
-      ProjectionExpression: 'device_id, #ts, #data', // Retrieve fields
+      ProjectionExpression: 'timestamp, data',
+      ScanIndexForward: false, // Order by descending timestamp
+      Limit: 1, // Fetch only the latest value
     };
-
-    console.log('DynamoDB Query Params:', JSON.stringify(params, null, 2));
 
     const result = await dynamodb.query(params).promise();
 
@@ -55,35 +42,26 @@ export const handler = async (
         statusCode: 404,
         headers: generateCORSHeaders(),
         body: JSON.stringify({
-          error: 'No devices found for the given ownerID',
+          error: 'No data found for the given device ID',
         }),
       };
     }
 
-    // Process results
-    const latestDevices = result.Items.reduce<Record<string, any>>((acc, item) => {
-      const { device_id, timestamp } = item;
-
-      if (!acc[device_id] || acc[device_id].timestamp < timestamp) {
-        acc[device_id] = item;
-      }
-
-      return acc;
-    }, {});
-
-    const devices = Object.values(latestDevices).map((item: any) => ({
-      deviceId: item.device_id,
-      timestamp: item.timestamp,
-      data: item.data,
-    }));
+    const latestDevice = result.Items[0]; // Since we limited to 1, this is the latest
 
     return {
       statusCode: 200,
       headers: generateCORSHeaders(),
-      body: JSON.stringify({ devices }),
+      body: JSON.stringify({
+        deviceId,
+        latestValue: {
+          timestamp: latestDevice.timestamp,
+          data: latestDevice.data,
+        },
+      }),
     };
   } catch (error) {
-    console.error('Error fetching devices:', error);
+    console.error('Error fetching latest device data:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return {
       statusCode: 500,

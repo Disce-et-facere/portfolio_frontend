@@ -13,7 +13,6 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-    // Handle preflight requests
     if (event.httpMethod === 'OPTIONS') {
       return {
         statusCode: 204,
@@ -22,46 +21,30 @@ export const handler = async (
       };
     }
 
-    const deviceId = event.queryStringParameters?.deviceId;
-    const ownerId = event.queryStringParameters?.ownerId;
+    // Hardcoded device ID for simplicity
+    const deviceId = 'C2DD576A79F8';
 
-    if (!deviceId || !ownerId) {
-      return {
-        statusCode: 400,
-        headers: generateCORSHeaders(),
-        body: JSON.stringify({ error: 'Both deviceId and ownerId are required' }),
-      };
-    }
-
-    // Query DynamoDB using the GSI
     const params = {
-      TableName: process.env.DEVICE_TABLE_NAME!,
-      IndexName: 'OwnerIDIndex', // Use the GSI
-      KeyConditionExpression: 'ownerID = :ownerId',
+      TableName: 'telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE',
+      KeyConditionExpression: 'device_id = :deviceId',
       ExpressionAttributeValues: {
-        ':ownerId': ownerId,
+        ':deviceId': deviceId,
       },
-      ProjectionExpression: 'device_id, #ts, data',
-      ExpressionAttributeNames: {
-        '#ts': 'timestamp', // Alias 'timestamp' since it's reserved
-        '#data': 'data',    // Alias 'data' if it's reserved (double-check this)
-      },
+      ProjectionExpression: 'timestamp, data',
     };
 
     const result = await dynamodb.query(params).promise();
 
     if (!result.Items || result.Items.length === 0) {
       return {
-        statusCode: 200,
+        statusCode: 404,
         headers: generateCORSHeaders(),
         body: JSON.stringify({
-          message: 'No data available for this device',
-          data: [],
+          error: 'No data available for this device',
         }),
       };
     }
 
-    // Parse and return the results
     const data = result.Items.map((item: any) => ({
       timestamp: item.timestamp,
       data: item.data,
