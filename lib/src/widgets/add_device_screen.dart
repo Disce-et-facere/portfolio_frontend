@@ -159,6 +159,8 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Device'),
@@ -173,7 +175,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                   if (deviceId == null) ...[
                     Text(
                       'Owner ID: ${_ownerID.isNotEmpty ? _ownerID : "Not Set"}',
-                      style: const TextStyle(color: Colors.red),
+                      style: TextStyle(color: theme.colorScheme.error),
                     ),
                     const SizedBox(height: 16),
                     TextField(
@@ -200,9 +202,15 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                       ),
                     ),
                   ] else ...[
-                    _buildResponseBox('DeviceID', deviceId!),
-                    _buildResponseBox('OwnerID', _ownerID),
-                    _buildResponseBox('MQTT Endpoint', iotEndpoint ?? 'Unavailable'),
+                    _buildResponseBox('DeviceID', deviceId!, theme),
+                    _buildResponseBox('OwnerID', _ownerID, theme),
+                    _buildResponseBox('MQTT Endpoint', iotEndpoint ?? 'Unavailable', theme),
+                    _buildResponseBox('Telemetry Topic', telemetryTopic ?? 'Unavailable', theme),
+                    _buildResponseBox('Shadow Get Topic', shadowGetTopic ?? 'Unavailable', theme),
+                    _buildResponseBox(
+                        'Shadow Update Topic', shadowUpdateTopic ?? 'Unavailable', theme),
+                    _buildResponseBox(
+                        'Shadow Delta Topic', shadowDeltaTopic ?? 'Unavailable', theme),
                     ElevatedButton(
                       onPressed: certificatePem != null
                           ? () => _downloadCertificate(certificatePem!, 'device.crt')
@@ -228,16 +236,16 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
     );
   }
 
-  Widget _buildResponseBox(String title, String content) {
+  Widget _buildResponseBox(String title, String content, ThemeData theme) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[200],
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
+            color: theme.shadowColor.withOpacity(0.2),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -248,16 +256,10 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Text(content),
-          ),
+          Text(content, style: theme.textTheme.bodyMedium),
         ],
       ),
     );

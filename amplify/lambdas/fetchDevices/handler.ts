@@ -35,12 +35,15 @@ export const handler = async (
 
     const params = {
       TableName: process.env.DEVICE_TABLE_NAME!,
-      IndexName: 'OwnerIDIndex', // Ensure this GSI is set up in the DynamoDB table
+      IndexName: 'OwnerIDIndex', // Use the GSI
       KeyConditionExpression: 'ownerID = :ownerId',
+      ExpressionAttributeNames: {
+        '#ts': 'timestamp', // Alias 'timestamp'
+      },
       ExpressionAttributeValues: {
         ':ownerId': ownerId,
       },
-      ProjectionExpression: 'device_id, timestamp, data',
+      ProjectionExpression: 'device_id, #ts, data', // Use the alias here
     };
 
     const result = await dynamodb.query(params).promise();
