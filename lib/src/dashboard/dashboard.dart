@@ -22,7 +22,7 @@ class Dashboard extends StatefulWidget {
 
 class _LoggedInPageState extends State<Dashboard> {
   String? userEmail;
-  String? ownerId;
+  String ownerId = '';
   bool isLoading = true;
   List<Device> devices = [];
 
@@ -39,17 +39,17 @@ class _LoggedInPageState extends State<Dashboard> {
   Future<void> _fetchOwnerId() async {
     try {
       final attributes = await Amplify.Auth.fetchUserAttributes();
-      final ownerAttr = attributes.firstWhere(
-        (attr) => attr.userAttributeKey.key == 'custom:ownerID',
+      final ownerIDAttribute = attributes.firstWhere(
+        (attr) => attr.userAttributeKey == CognitoUserAttributeKey.custom('OwnerID'),
         orElse: () => const AuthUserAttribute(
           userAttributeKey: CognitoUserAttributeKey.custom('OwnerID'),
           value: '',
         ),
       );
       setState(() {
-        ownerId = ownerAttr.value.isNotEmpty ? ownerAttr.value : null;
+        ownerId = ownerIDAttribute.value;
       });
-      if (ownerId != null) {
+      if (ownerId.isNotEmpty) {
         await _fetchDevices();
       }
     } catch (e) {
@@ -70,7 +70,7 @@ class _LoggedInPageState extends State<Dashboard> {
   }
 
   Future<void> _fetchDevices() async {
-    if (ownerId == null || ownerId!.isEmpty) {
+    if (ownerId.isEmpty) {
       debugPrint('Owner ID is not set. Cannot fetch devices.');
       return;
     }
@@ -170,6 +170,13 @@ class _LoggedInPageState extends State<Dashboard> {
 
   @override
   Widget build(BuildContext context) {
+    final messages = [
+      Message(content: 'Low battery on Device 1', type: MessageType.warning),
+      Message(content: 'Temperature too high on Device 2', type: MessageType.alert),
+      Message(content: 'Device 3 disconnected', type: MessageType.alert),
+      Message(content: 'Firmware update available for Device 1', type: MessageType.warning),
+    ];
+
     return Scaffold(
       appBar: Toolbar(
         username: userEmail ?? 'Loading...',
@@ -218,13 +225,9 @@ class _LoggedInPageState extends State<Dashboard> {
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: Center(
-                  child: isLoading
-                      ? const CircularProgressIndicator()
-                      : devices.isEmpty
-                          ? const Text('No devices available')
-                          : const Text('Select a device to view details'),
-                ),
+                child: devices.isEmpty
+                    ? MessageBoard(messages: messages)
+                    : MessageBoard(messages: messages),
               ),
             ],
           ),
@@ -241,34 +244,110 @@ class DeviceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isOnline = device.status.toLowerCase() == 'online';
     final colorScheme = Theme.of(context).colorScheme;
 
+    final formattedTimestamp = DateTime.fromMillisecondsSinceEpoch(
+      device.timestamp * 1000,
+    ).toString(); // Convert timestamp to human-readable format
+
     return Card(
-      color: colorScheme.surfaceDim,
+      color: colorScheme.surface,
       elevation: 4,
       child: SizedBox(
         width: 200,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                device.name,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                'Device ID: ${device.name}',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
-                device.status,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isOnline ? Colors.green : Colors.red,
-                ),
+                'Timestamp: $formattedTimestamp',
+                style: const TextStyle(fontSize: 14),
               ),
+              const SizedBox(height: 8),
+              ...device.data.entries.where((entry) {
+                // Exclude unit keys ending with "-Unit"
+                return !entry.key.endsWith('-Unit');
+              }).map((entry) {
+                final unitKey = '${entry.key}-Unit';
+                final unit = device.data.containsKey(unitKey) ? device.data[unitKey] : '';
+                return Text(
+                  '${entry.key}: ${entry.value} $unit'.trim(),
+                  style: const TextStyle(fontSize: 14),
+                );
+              }),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class Message {
+  final String content;
+  final MessageType type;
+
+  Message({required this.content, required this.type});
+}
+
+enum MessageType { warning, alert }
+
+class MessageBoard extends StatelessWidget {
+  final List<Message> messages;
+
+  const MessageBoard({
+    super.key,
+    required this.messages,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      color: colorScheme.surface,
+      margin: const EdgeInsets.all(16),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Message Board',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Divider(),
+            Expanded(
+              child: ListView.builder(
+                itemCount: messages.length,
+                itemBuilder: (context, index) {
+                  final message = messages[index];
+                  final color = message.type == MessageType.warning
+                      ? Colors.orange
+                      : Colors.red;
+                  final icon = message.type == MessageType.warning
+                      ? Icons.warning
+                      : Icons.error;
+
+                  return ListTile(
+                    leading: Icon(icon, color: color),
+                    title: Text(
+                      message.content,
+                      style: TextStyle(color: color),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
