@@ -138,6 +138,19 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
     }
   }
 
+  Future<void> _downloadCertificate(String content, String fileName) async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsString(content);
+
+      _showSnackBar('$fileName downloaded to ${directory.path}');
+    } catch (e) {
+      debugPrint('Error saving $fileName: $e');
+      _showSnackBar('Error downloading $fileName: $e');
+    }
+  }
+
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
@@ -190,6 +203,24 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                     _buildResponseBox('DeviceID', deviceId!),
                     _buildResponseBox('OwnerID', _ownerID),
                     _buildResponseBox('MQTT Endpoint', iotEndpoint ?? 'Unavailable'),
+                    ElevatedButton(
+                      onPressed: certificatePem != null
+                          ? () => _downloadCertificate(certificatePem!, 'device.crt')
+                          : null,
+                      child: const Text('Download Device Certificate (device.crt)'),
+                    ),
+                    ElevatedButton(
+                      onPressed: privateKey != null
+                          ? () => _downloadCertificate(privateKey!, 'private.key')
+                          : null,
+                      child: const Text('Download Private Key (private.key)'),
+                    ),
+                    ElevatedButton(
+                      onPressed: caCertificate != null
+                          ? () => _downloadCertificate(caCertificate!, 'ca.pem')
+                          : null,
+                      child: const Text('Download CA Certificate (ca.pem)'),
+                    ),
                   ],
                 ],
               ),
