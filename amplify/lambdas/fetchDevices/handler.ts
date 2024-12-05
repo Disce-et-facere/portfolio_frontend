@@ -4,7 +4,7 @@ import AWS from 'aws-sdk';
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 
 const generateCORSHeaders = () => ({
-  'Access-Control-Allow-Origin': process.env.WEB_APP_URL!,
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   'Access-Control-Allow-Methods': 'OPTIONS,POST',
 });
@@ -33,7 +33,7 @@ export const handler = async (
     }
 
     const params = {
-      TableName: 'process.env.DEVICE_TABLE_NAME!',
+      TableName: 'telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE',
       IndexName: 'OwnerIDIndex', // Use the GSI
       KeyConditionExpression: 'ownerID = :ownerId',
       ExpressionAttributeNames: {
