@@ -53,8 +53,7 @@ export const handler = async (
         statusCode: 404,
         headers: generateCORSHeaders(),
         body: JSON.stringify({
-          message: 'No devices in Database',
-          devices: [],
+          error: 'No devices found for the given ownerID',
         }),
       };
     }
