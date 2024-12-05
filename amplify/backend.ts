@@ -69,7 +69,7 @@ const deleteDevicesLambda = backend.deleteDevice.resources.lambda;
 const dynamoDbPolicy = new iam.PolicyStatement({
   effect: iam.Effect.ALLOW,
   actions: ['dynamodb:Query', 'dynamodb:DeleteItem'],
-  resources: ['arn:aws:dynamodb:eu-central-1:891612540400:table/YourTableName'],
+  resources: ['arn:aws:dynamodb:eu-central-1:891612540400:table/telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE'],
 });
 
 // permission for deleteDevice Lambda
@@ -92,7 +92,38 @@ const fetchDeviceDataLambda = backend.fetchDeviceData.resources.lambda;
 const dynamoDbFetchDeviceDataPolicy = new iam.PolicyStatement({
   effect: iam.Effect.ALLOW,
   actions: ['dynamodb:Query', 'dynamodb:GetItem'],
-  resources: ['arn:aws:dynamodb:eu-central-1:891612540400:table/YourTableName'],
+  resources: ['arn:aws:dynamodb:eu-central-1:891612540400:table/telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE'],
 });
 
 fetchDeviceDataLambda.addToRolePolicy(dynamoDbFetchDeviceDataPolicy);
+/*
+// Permissions for `updateSendRate`
+backend.updateSendRate.resources.lambda.addToRolePolicy(
+  new iam.PolicyStatement({
+    effect: iam.Effect.ALLOW,
+    actions: ['iot:UpdateThingShadow'],
+    resources: ['arn:aws:iot:eu-central-1:891612540400:thing/*'],
+  })
+);
+
+// Permissions for `setColdStorage`
+backend.setColdStorage.resources.lambda.addToRolePolicy(
+  new iam.PolicyStatement({
+    effect: iam.Effect.ALLOW,
+    actions: ['dynamodb:Query', 's3:PutObject'],
+    resources: [
+      'arn:aws:dynamodb:eu-central-1:891612540400:table/telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE',
+      'arn:aws:s3:::YourBucketName/*',
+    ],
+  })
+);
+
+// Permissions for `checkDeviceStatus`
+backend.checkDeviceStatus.resources.lambda.addToRolePolicy(
+  new iam.PolicyStatement({
+    effect: iam.Effect.ALLOW,
+    actions: ['iot:GetThingShadow'],
+    resources: ['arn:aws:iot:eu-central-1:891612540400:thing/*'],
+  })
+);
+*/

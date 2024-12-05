@@ -15,7 +15,7 @@ class AddDeviceScreen extends StatefulWidget {
 
 class _AddDeviceScreenState extends State<AddDeviceScreen> {
   final TextEditingController _deviceNameController = TextEditingController();
-  final TextEditingController _aliasController = TextEditingController();
+  final TextEditingController _updatePeriodController = TextEditingController();
   bool _isLoading = false;
   String? ownerId;
   final String apiUrl = 'https://i54j20zyi1.execute-api.eu-central-1.amazonaws.com';
@@ -49,9 +49,17 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
 
   Future<void> _addDevice() async {
     final deviceName = _deviceNameController.text.trim();
+    final updatePeriodStr = _updatePeriodController.text.trim();
     if (deviceName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a device name')),
+      );
+      return;
+    }
+
+    if (updatePeriodStr.isEmpty || int.tryParse(updatePeriodStr) == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid update period')),
       );
       return;
     }
@@ -62,6 +70,8 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
       );
       return;
     }
+
+    final updatePeriod = int.parse(updatePeriodStr);
 
     setState(() {
       _isLoading = true;
@@ -75,7 +85,10 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
         },
-        body: jsonEncode({"deviceName": deviceName}),
+        body: jsonEncode({
+          "deviceName": deviceName,
+          "updatePeriod": updatePeriod,
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -162,9 +175,10 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                     ),
                     const SizedBox(height: 16),
                     TextField(
-                      controller: _aliasController,
+                      controller: _updatePeriodController,
+                      keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
-                        labelText: 'Alias (optional)',
+                        labelText: 'Update Period (seconds)',
                         border: OutlineInputBorder(),
                       ),
                     ),

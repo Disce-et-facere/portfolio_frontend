@@ -46,13 +46,13 @@ export const handler = async (
       };
     }
 
-    const { deviceName } = JSON.parse(event.body || '{}');
+    const { deviceName, updatePeriod} = JSON.parse(event.body || '{}');
 
-    if (!deviceName) {
+    if (!deviceName || !updatePeriod) {
       return {
         statusCode: 400,
         headers: generateCORSHeaders(),
-        body: JSON.stringify({ error: 'Device name is required' }),
+        body: JSON.stringify({ error: 'Device name and update period are required' }),
       };
     }
 
@@ -83,8 +83,8 @@ export const handler = async (
     // Step 4: Set Shadow
     const shadowPayload = {
       state: {
-        desired: { sendIntervalSeconds: 10 },
-        reported: { sendIntervalSeconds: 10 },
+        desired: { sendIntervalSeconds: updatePeriod },
+        reported: { sendIntervalSeconds: updatePeriod },
       },
     };
 

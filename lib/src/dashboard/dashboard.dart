@@ -321,7 +321,7 @@ class MessageBoard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Message Board',
+              'Message Board - Dummies',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const Divider(),
