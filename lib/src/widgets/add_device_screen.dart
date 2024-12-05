@@ -29,7 +29,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   String? privateKey;
   String? caCertificate;
 
-  final String apiUrl = 'https://i54j20zyi1.execute-api.eu-central-1.amazonaws.com/';
+  final String apiUrl = 'https://i54j20zyi1.execute-api.eu-central-1.amazonaws.com';
 
   @override
   void initState() {
