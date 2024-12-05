@@ -6,24 +6,23 @@ const dynamodb = new AWS.DynamoDB.DocumentClient();
 const generateCORSHeaders = () => ({
   'Access-Control-Allow-Origin': '*', // Adjust to your frontend domain if needed
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  'Access-Control-Allow-Methods': 'OPTIONS,GET',
+  'Access-Control-Allow-Methods': 'OPTIONS,POST',
 });
 
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-  
-    if (event.httpMethod === 'OPTIONS') {
-      return {
-        statusCode: 204,
-        headers: generateCORSHeaders(),
-        body: '',
-      };
-    }
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 204,
+      headers: generateCORSHeaders(),
+      body: '',
+    };
+  }
 
-    try {
-    // Extract ownerId from query parameters
-    const ownerId = event.queryStringParameters?.ownerID;
+  try {
+    const body = JSON.parse(event.body || '{}');
+    const ownerId = body.ownerID;
 
     if (!ownerId) {
       return {

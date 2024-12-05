@@ -70,23 +70,17 @@ class _LoggedInPageState extends State<Dashboard> {
   }
 
   Future<void> _fetchDevices() async {
-    if (ownerId.isEmpty) {
-      debugPrint('Owner ID is not set. Cannot fetch devices.');
-      return;
-    }
-
     final String accessToken = await _getAccessToken();
+    const String apiUrl = 'https://1f0g21n1ef.execute-api.eu-central-1.amazonaws.com';
 
     try {
-      final apiUrl = 'https://1f0g21n1ef.execute-api.eu-central-1.amazonaws.com';
-      final urlWithParams = Uri.parse('$apiUrl?ownerID=$ownerId');
-
-      final response = await http.get(
-        urlWithParams,
+      final response = await http.post(
+        Uri.parse(apiUrl),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
         },
+        body: jsonEncode({'ownerID': ownerId}),
       );
 
       if (response.statusCode == 200) {
@@ -97,7 +91,7 @@ class _LoggedInPageState extends State<Dashboard> {
           devices = devicesData
               .map((device) => Device(
                     name: device['deviceId'],
-                    status: 'Online', // Update dynamically if available
+                    status: 'Online', // Example status
                     timestamp: device['timestamp'],
                     data: Map<String, dynamic>.from(device['data']),
                   ))

@@ -6,7 +6,7 @@ const dynamodb = new AWS.DynamoDB.DocumentClient();
 const generateCORSHeaders = () => ({
   'Access-Control-Allow-Origin': process.env.WEB_APP_URL!,
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  'Access-Control-Allow-Methods': 'OPTIONS,GET',
+  'Access-Control-Allow-Methods': 'OPTIONS,POST',
 });
 
 export const handler = async (
