@@ -12,8 +12,7 @@ const generateCORSHeaders = () => ({
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
-  try {
-
+  
     if (event.httpMethod === 'OPTIONS') {
       return {
         statusCode: 204,
@@ -22,14 +21,15 @@ export const handler = async (
       };
     }
 
+    try {
     // Extract ownerId from query parameters
-    const ownerId = event.queryStringParameters?.ownerId;
+    const ownerId = event.queryStringParameters?.ownerID;
 
     if (!ownerId) {
       return {
         statusCode: 400,
         headers: generateCORSHeaders(),
-        body: JSON.stringify({ error: 'ownerId is required' }),
+        body: JSON.stringify({ error: 'ownerID is required' }),
       };
     }
 

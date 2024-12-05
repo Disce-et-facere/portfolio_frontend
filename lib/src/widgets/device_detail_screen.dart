@@ -66,16 +66,13 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
     final String accessToken = await _getAccessToken();
 
     try {
-      final response = await http.post(
-        Uri.parse(apiUrl),
+      final urlWithParams = Uri.parse('$apiUrl?deviceId=$deviceName&ownerID=$ownerId');
+      final response = await http.get(
+        urlWithParams,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
         },
-        body: jsonEncode({
-          'deviceName': deviceName,
-          'ownerID': ownerId,
-        }),
       );
 
       if (response.statusCode == 200) {
@@ -100,7 +97,6 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
           });
         }
 
-        // Generate GraphData for each measurement type
         return groupedData.map((key, points) {
           final unit = data.firstWhere((item) => item['data'].containsKey('$key-Unit'),
               orElse: () => {})['data']['$key-Unit'] ?? '';
@@ -128,16 +124,13 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
     final String ownerId = await _getOwnerId();
 
     try {
-      final response = await http.post(
-        Uri.parse(deleteApiUrl),
+      final urlWithParams = Uri.parse('$deleteApiUrl?deviceId=${widget.device.name}&ownerID=$ownerId');
+      final response = await http.delete(
+        urlWithParams,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
         },
-        body: jsonEncode({
-          'deviceId': widget.device.name,
-          'ownerID': ownerId,
-        }),
       );
 
       if (response.statusCode == 200) {
@@ -151,13 +144,14 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
       }
     } catch (e) {
       debugPrint('Error deleting device: $e');
-      if(mounted){
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error deleting device: $e')),
+          SnackBar(content: Text('Error deleting device: $e')),
         );
       }
     }
   }
+
 
   Future<void> _showDeleteConfirmationDialog() async {
     final bool confirmed = await showDialog<bool>(

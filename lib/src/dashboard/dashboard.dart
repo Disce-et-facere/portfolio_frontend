@@ -78,16 +78,15 @@ class _LoggedInPageState extends State<Dashboard> {
     final String accessToken = await _getAccessToken();
 
     try {
-      const apiUrl = 'https://1f0g21n1ef.execute-api.eu-central-1.amazonaws.com';
-      final response = await http.post(
-        Uri.parse(apiUrl),
+      final apiUrl = 'https://1f0g21n1ef.execute-api.eu-central-1.amazonaws.com';
+      final urlWithParams = Uri.parse('$apiUrl?ownerID=$ownerId');
+
+      final response = await http.get(
+        urlWithParams,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
         },
-        body: jsonEncode({
-          'ownerID': ownerId,
-        }),
       );
 
       if (response.statusCode == 200) {
