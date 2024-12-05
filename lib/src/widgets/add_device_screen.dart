@@ -30,7 +30,13 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   String? privateKey;
   String? caCertificate;
 
-  Future<String?> _getOwnerId() async {
+  @override
+  void initState() {
+    super.initState();
+    _fetchOwnerId();
+  }
+
+  Future<void> _fetchOwnerId() async {
     try {
       final attributes = await Amplify.Auth.fetchUserAttributes();
       final ownerAttr = attributes.firstWhere(
@@ -40,34 +46,32 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
           value: '',
         ),
       );
-      return ownerAttr.value.isNotEmpty ? ownerAttr.value : null;
+      setState(() {
+        ownerId = ownerAttr.value.isNotEmpty ? ownerAttr.value : null;
+      });
+      debugPrint('Fetched OwnerID: $ownerId');
     } catch (e) {
       debugPrint('Error fetching OwnerID: $e');
-      return null;
     }
   }
 
   Future<void> _addDevice() async {
     final deviceName = _deviceNameController.text.trim();
     final updatePeriodStr = _updatePeriodController.text.trim();
+
     if (deviceName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a device name')),
-      );
+      _showSnackBar('Please enter a device name');
       return;
     }
 
     if (updatePeriodStr.isEmpty || int.tryParse(updatePeriodStr) == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid update period')),
-      );
+      _showSnackBar('Please enter a valid update period');
       return;
     }
 
-    if (ownerId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('OwnerID is not set. Cannot add device.')),
-      );
+    if (ownerId == null || ownerId!.isEmpty) {
+      _showSnackBar('OwnerID is not set. Cannot add device.');
+      debugPrint('OwnerID not set: $ownerId');
       return;
     }
 
@@ -78,7 +82,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
     });
 
     try {
-      final String accessToken = await _getAccessToken();
+      final accessToken = await _getAccessToken();
       final response = await http.post(
         Uri.parse(apiUrl),
         headers: {
@@ -88,6 +92,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
         body: jsonEncode({
           "deviceName": deviceName,
           "updatePeriod": updatePeriod,
+          "ownerID": ownerId,
         }),
       );
 
@@ -105,17 +110,37 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
           privateKey = data['certificates']['privateKey'];
           caCertificate = data['certificates']['caCertificate'];
         });
+        debugPrint('Device added successfully: $deviceId');
       } else {
         debugPrint('Failed to add device. Status: ${response.statusCode}');
-        throw Exception('Failed to add device. Status: ${response.statusCode}');
+        _showSnackBar('Failed to add device. Status: ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('Error adding device: $e');
+      _showSnackBar('Error adding device: $e');
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
+  }
+
+  Future<String> _getAccessToken() async {
+    try {
+      final cognitoPlugin = Amplify.Auth.getPlugin(AmplifyAuthCognito.pluginKey);
+      final cognitoSession = await cognitoPlugin.fetchAuthSession();
+      final tokens = cognitoSession.userPoolTokensResult.value;
+      return tokens.accessToken.raw;
+    } catch (e) {
+      debugPrint('Error fetching access token: $e');
+      throw Exception('Failed to fetch access token.');
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   Future<void> _downloadCertificate(String content, String fileName) async {
@@ -124,32 +149,11 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
       final file = File('${directory.path}/$fileName');
       await file.writeAsString(content);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$fileName downloaded to ${directory.path}')),
-        );
-      }
+      _showSnackBar('$fileName downloaded to ${directory.path}');
     } catch (e) {
       debugPrint('Error saving $fileName: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error downloading $fileName: $e')),
-        );
-      }
+      _showSnackBar('Error downloading $fileName: $e');
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchOwnerId();
-  }
-
-  Future<void> _fetchOwnerId() async {
-    final fetchedOwnerId = await _getOwnerId();
-    setState(() {
-      ownerId = fetchedOwnerId;
-    });
   }
 
   @override
@@ -251,17 +255,5 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
         ],
       ),
     );
-  }
-
-  Future<String> _getAccessToken() async {
-    try {
-      final cognitoPlugin = Amplify.Auth.getPlugin(AmplifyAuthCognito.pluginKey);
-      final cognitoSession = await cognitoPlugin.fetchAuthSession();
-      final tokens = cognitoSession.userPoolTokensResult.value;
-      return tokens.accessToken.raw;
-    } catch (e) {
-      debugPrint('Error fetching access token: $e');
-      return '';
-    }
   }
 }
