@@ -35,7 +35,7 @@ export const handler = async (
 
     // Query DynamoDB using the GSI
     const params = {
-      TableName: 'deviceData',
+      TableName: 'process.env.DEVICE_TABLE_NAME!',
       IndexName: 'OwnerIDIndex', // Use the GSI
       KeyConditionExpression: 'ownerID = :ownerID AND device_id = :deviceID',
       ExpressionAttributeValues: {

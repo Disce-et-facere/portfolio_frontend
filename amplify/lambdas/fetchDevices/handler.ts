@@ -33,7 +33,7 @@ export const handler = async (
     }
 
     const params = {
-      TableName: 'deviceData',
+      TableName: 'process.env.DEVICE_TABLE_NAME!',
       IndexName: 'OwnerIDIndex', // Use the GSI
       KeyConditionExpression: 'ownerID = :ownerId',
       ExpressionAttributeNames: {
