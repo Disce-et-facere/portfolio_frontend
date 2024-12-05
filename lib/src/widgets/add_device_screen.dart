@@ -33,11 +33,7 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeOwnerId();
-  }
-
-  Future<void> _initializeOwnerId() async {
-    await _fetchOwnerId();
+    _fetchOwnerId();
   }
 
   Future<void> _fetchOwnerId() async {
@@ -45,17 +41,22 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
       final attributes = await Amplify.Auth.fetchUserAttributes();
       final ownerAttr = attributes.firstWhere(
         (attr) => attr.userAttributeKey.key == 'custom:OwnerID',
-        orElse: () => AuthUserAttribute(
+        orElse: () => const AuthUserAttribute(
           userAttributeKey: CognitoUserAttributeKey.custom('OwnerID'),
           value: '',
         ),
       );
+
       setState(() {
         ownerId = ownerAttr.value.isNotEmpty ? ownerAttr.value : null;
       });
-      debugPrint('Fetched OwnerID: $ownerId');
+
+      debugPrint(ownerId != null ? 'Fetched OwnerID: $ownerId' : 'OwnerID not set.');
     } catch (e) {
       debugPrint('Error fetching OwnerID: $e');
+      setState(() {
+        ownerId = null;
+      });
     }
   }
 
@@ -75,7 +76,6 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
 
     if (ownerId == null || ownerId!.isEmpty) {
       _showSnackBar('OwnerID is not set. Cannot add device.');
-      debugPrint('OwnerID not set: $ownerId');
       return;
     }
 
@@ -174,6 +174,11 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (deviceId == null) ...[
+                    Text(
+                      'Owner ID: ${ownerId ?? "Not Set"}',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                    const SizedBox(height: 16),
                     TextField(
                       controller: _deviceNameController,
                       decoration: const InputDecoration(
