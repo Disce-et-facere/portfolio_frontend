@@ -10,7 +10,7 @@ const iotData = new AWS.IotData({ endpoint: process.env.IOT_CORE_ENDPOINT });
 const CA_CERT_URL = 'https://www.amazontrust.com/repository/AmazonRootCA1.pem';
 
 // Policy ARN for IoT device permissions
-const IOT_POLICY_ARN = process.env.IOT_POLICY_ARN;
+const IOT_POLICY_ARN = `${process.env.AWS_BASE_ARN}:policy/DevicePolicy`;
 
 // Function to fetch CA certificate
 function fetchCA(url: string): Promise<string> {
