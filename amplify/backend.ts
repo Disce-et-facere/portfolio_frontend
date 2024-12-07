@@ -1,5 +1,6 @@
 import { defineBackend } from '@aws-amplify/backend';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as iot from 'aws-cdk-lib/aws-iot';
 import { auth} from './auth/resource';
 import { tableSchema} from './data/resource';
 import { createDevice } from './lambdas/createDevice/resource';
@@ -22,6 +23,36 @@ export const backend = defineBackend({
 // Permissions for createDevice Lambda
 const createDeviceLambda = backend.createDevice.resources.lambda;
 
+// Define the IoT policy
+const iotPolicy = new iot.CfnPolicy(createDeviceLambda, 'DevicePolicy', {
+  policyName: 'DevicePolicy',
+  policyDocument: {
+    Version: '2012-10-17',
+    Statement: [
+      {
+        Effect: 'Allow',
+        Action: 'iot:Connect',
+        Resource: 'arn:aws:iot:eu-central-1:891612540400:client/${iot:ClientId}',
+      },
+      {
+        Effect: 'Allow',
+        Action: 'iot:Publish',
+        Resource: 'arn:aws:iot:eu-central-1:891612540400:topic/${iot:ClientId}/telemetry',
+      },
+      {
+        Effect: 'Allow',
+        Action: 'iot:Subscribe',
+        Resource: 'arn:aws:iot:eu-central-1:891612540400:topicfilter/${iot:ClientId}/*',
+      },
+      {
+        Effect: 'Allow',
+        Action: 'iot:Receive',
+        Resource: 'arn:aws:iot:eu-central-1:891612540400:topic/${iot:ClientId}/*',
+      },
+    ],
+  },
+});
+
 const iotPolicyAdd = new iam.PolicyStatement({
   effect: iam.Effect.ALLOW,
   actions: [
@@ -29,13 +60,13 @@ const iotPolicyAdd = new iam.PolicyStatement({
     'iot:AttachThingPrincipal',
     'iot:UpdateThingShadow',
   ],
-  resources: ['arn:aws:iot:eu-central-1:891612540400:thing/*'], // Replace with your account and region
+  resources: ['arn:aws:iot:eu-central-1:891612540400:thing/*'],
 });
 
 const certPolicy = new iam.PolicyStatement({
   effect: iam.Effect.ALLOW,
   actions: ['iot:AttachThingPrincipal'],
-  resources: ['arn:aws:iot:eu-central-1:891612540400:cert/*'], // Replace with your account and region
+  resources: ['arn:aws:iot:eu-central-1:891612540400:cert/*'],
 });
 
 const generalIotPolicy = new iam.PolicyStatement({

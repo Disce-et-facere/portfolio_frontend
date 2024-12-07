@@ -9,6 +9,9 @@ const iotData = new AWS.IotData({ endpoint: process.env.IOT_CORE_ENDPOINT });
 // AWS IoT CA Certificate URL
 const CA_CERT_URL = 'https://www.amazontrust.com/repository/AmazonRootCA1.pem';
 
+// Policy ARN for IoT device permissions
+const IOT_POLICY_ARN = process.env.IOT_POLICY_ARN;
+
 // Function to fetch CA certificate
 function fetchCA(url: string): Promise<string> {
   return new Promise<string>((resolve, reject) => {
@@ -46,7 +49,7 @@ export const handler = async (
       };
     }
 
-    const { deviceName, updatePeriod} = JSON.parse(event.body || '{}');
+    const { deviceName, updatePeriod } = JSON.parse(event.body || '{}');
 
     if (!deviceName || !updatePeriod) {
       return {
@@ -80,11 +83,32 @@ export const handler = async (
       })
       .promise();
 
-    // Step 4: Set Shadow
+    // Step 4: Attach Policy to Certificate
+    if (!IOT_POLICY_ARN) {
+      throw new Error('IoT policy ARN is not defined in the environment variables');
+    }
+
+    await iot
+      .attachPolicy({
+        policyName: IOT_POLICY_ARN.split('/').pop()!, // Extract policy name from ARN
+        target: certificateArn,
+      })
+      .promise();
+    console.log('Policy attached to certificate:', IOT_POLICY_ARN);
+
+    // Step 5: Set Shadow with status and update period
     const shadowPayload = {
       state: {
-        desired: { sendIntervalSeconds: updatePeriod },
-        reported: { sendIntervalSeconds: updatePeriod },
+        desired: {
+          sendIntervalSeconds: updatePeriod,
+          status: 'connected', // Initial status
+          deviceData: {} // Placeholder for device data
+        },
+        reported: {
+          sendIntervalSeconds: updatePeriod,
+          status: 'disconnected', // Device defaults to disconnected
+          deviceData: {} // Placeholder for device data
+        },
       },
     };
 
@@ -95,11 +119,13 @@ export const handler = async (
       })
       .promise();
 
-    // Step 5: Retrieve CA Certificate using fetchCA function
+    console.log('Shadow updated:', shadowPayload);
+
+    // Step 6: Retrieve CA Certificate using fetchCA function
     const caCert = await fetchCA(CA_CERT_URL);
     console.log('Fetched CA Certificate:', caCert);
 
-    // Step 6: Return IoT endpoint, certificates, and shadow details
+    // Step 7: Return IoT endpoint, certificates, and shadow details
     const iotEndpoint = (await iot.describeEndpoint({ endpointType: 'iot:Data-ATS' }).promise())
       .endpointAddress;
 
@@ -128,7 +154,7 @@ export const handler = async (
     return {
       statusCode: 500,
       headers: generateCORSHeaders(),
-      body: JSON.stringify({ error: errorMessage, environment: envValues,}),
+      body: JSON.stringify({ error: errorMessage, environment: envValues }),
     };
   }
 };

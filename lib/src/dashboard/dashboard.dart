@@ -34,68 +34,6 @@ class _LoggedInPageState extends State<Dashboard> {
     _fetchOwnerId();
   }
 
-  Future<void> _fetchOwnerId() async {
-    try {
-      final attributes = await Amplify.Auth.fetchUserAttributes();
-      final ownerIDAttribute = attributes.firstWhere(
-        (attr) => attr.userAttributeKey == CognitoUserAttributeKey.custom('OwnerID'),
-        orElse: () => const AuthUserAttribute(
-          userAttributeKey: CognitoUserAttributeKey.custom('OwnerID'),
-          value: '',
-        ),
-      );
-      setState(() {
-        ownerId = ownerIDAttribute.value;
-      });
-      if (ownerId.isNotEmpty) {
-        await _fetchDevices();
-      }
-    } catch (e) {
-      debugPrint('Error fetching OwnerID: $e');
-    }
-  }
-
- Future<void> _fetchDevices() async {
-  const query = '''
-    query ListDevicesByOwnerID(\$ownerID: ID!) {
-      listDevicesByOwnerID(ownerID: \$ownerID) {
-        device_id
-        timestamp
-        deviceData
-      }
-    }
-  ''';
-
-  try {
-    final response = await Amplify.API.query<String>(
-      request: GraphQLRequest<String>(
-        document: query,
-        variables: {'ownerID': ownerId},
-      ),
-    ).response;
-
-    if (response.data != null) {
-      final decoded = jsonDecode(response.data!) as Map<String, dynamic>;
-      final List<dynamic> devicesData = decoded['listDevicesByOwnerID'] ?? [];
-
-      setState(() {
-        devices = devicesData
-            .map((device) => Device(
-                  name: device['device_id'],
-                  status: 'Online', // Example status
-                  timestamp: device['timestamp'],
-                  data: Map<String, dynamic>.from(device['deviceData']),
-                ))
-            .toList();
-      });
-    } else {
-      debugPrint('No devices found.');
-    }
-  } catch (e) {
-    debugPrint('Error fetching devices: $e');
-  }
-}
-
   Future<void> _fetchUserEmail() async {
     try {
       final attributes = await Amplify.Auth.fetchUserAttributes();
@@ -118,6 +56,105 @@ class _LoggedInPageState extends State<Dashboard> {
       setState(() {
         isLoading = false;
       });
+    }
+  }
+
+  Future<void> _fetchOwnerId() async {
+    try {
+      final attributes = await Amplify.Auth.fetchUserAttributes();
+      final ownerIDAttribute = attributes.firstWhere(
+        (attr) => attr.userAttributeKey == CognitoUserAttributeKey.custom('OwnerID'),
+        orElse: () => const AuthUserAttribute(
+          userAttributeKey: CognitoUserAttributeKey.custom('OwnerID'),
+          value: '',
+        ),
+      );
+      setState(() {
+        ownerId = ownerIDAttribute.value;
+      });
+      if (ownerId.isNotEmpty) {
+        await _fetchDevices();
+      }
+    } catch (e) {
+      debugPrint('Error fetching OwnerID: $e');
+    }
+  }
+
+  Future<void> _fetchDevices() async {
+    const query = '''
+      query ListDevicesByOwnerID(\$ownerID: ID!) {
+        listDevicesByOwnerID(ownerID: \$ownerID) {
+          device_id
+          timestamp
+          deviceData
+        }
+      }
+    ''';
+
+    try {
+      final response = await Amplify.API.query<String>(
+        request: GraphQLRequest<String>(
+          document: query,
+          variables: {'ownerID': ownerId},
+        ),
+      ).response;
+
+      if (response.data != null) {
+        final decoded = jsonDecode(response.data!) as Map<String, dynamic>;
+        final List<dynamic> devicesData = decoded['listDevicesByOwnerID'] ?? [];
+
+        setState(() {
+          devices = devicesData
+              .map((device) => Device(
+                    name: device['device_id'],
+                    status: 'Fetching...', // Placeholder for shadow data
+                    timestamp: device['timestamp'],
+                    data: Map<String, dynamic>.from(device['deviceData']),
+                  ))
+              .toList();
+        });
+
+        // Fetch shadow data for each device
+        for (final device in devices) {
+          await _fetchShadow(device.name);
+        }
+      } else {
+        debugPrint('No devices found.');
+      }
+    } catch (e) {
+      debugPrint('Error fetching devices: $e');
+    }
+  }
+
+  Future<void> _fetchShadow(String deviceId) async {
+    debugPrint('Fetching shadow data for device: $deviceId');
+    const shadowGetTopic = '\$aws/things/{deviceId}/shadow/get';
+
+    try {
+      final shadowResponse = await Amplify.API.query<String>(
+        request: GraphQLRequest<String>(
+          document: shadowGetTopic.replaceAll('{deviceId}', deviceId),
+        ),
+      ).response;
+
+      if (shadowResponse.data != null) {
+        final shadowData = jsonDecode(shadowResponse.data!) as Map<String, dynamic>;
+
+        setState(() {
+          devices = devices.map((device) {
+            if (device.name == deviceId) {
+              device.status = shadowData['state']['reported']['status'] ?? 'Unknown';
+              device.data = Map<String, dynamic>.from(
+                  shadowData['state']['reported']['deviceData'] ?? {});
+            }
+            return device;
+          }).toList();
+        });
+      } else {
+        debugPrint('No shadow data for device: $deviceId');
+      }
+    } catch (e) {
+      debugPrint('Error fetching shadow for $deviceId: $e');
     }
   }
 
@@ -232,7 +269,7 @@ class DeviceCard extends StatelessWidget {
 
     final formattedTimestamp = DateTime.fromMillisecondsSinceEpoch(
       device.timestamp * 1000,
-    ).toString(); // Convert timestamp to human-readable format
+    ).toString();
 
     return Card(
       color: colorScheme.surface,
@@ -242,30 +279,17 @@ class DeviceCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Device ID: ${device.name}',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Timestamp: $formattedTimestamp',
-                style: const TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              ...device.data.entries.where((entry) {
-                // Exclude unit keys ending with "-Unit"
-                return !entry.key.endsWith('-Unit');
-              }).map((entry) {
-                final unitKey = '${entry.key}-Unit';
-                final unit = device.data.containsKey(unitKey) ? device.data[unitKey] : '';
-                return Text(
-                  '${entry.key}: ${entry.value} $unit'.trim(),
-                  style: const TextStyle(fontSize: 14),
-                );
-              }),
+              Text('Status: ${device.status}'),
+              Text('Last Updated: $formattedTimestamp'),
+              ...device.data.entries.map((entry) {
+                return Text('${entry.key}: ${entry.value}');
+              }).toList(),
             ],
           ),
         ),
