@@ -61,7 +61,7 @@ class _LoggedInPageState extends State<Dashboard> {
       listDevicesByOwnerID(ownerID: \$ownerID) {
         device_id
         timestamp
-        data
+        deviceData
       }
     }
   ''';
@@ -84,7 +84,7 @@ class _LoggedInPageState extends State<Dashboard> {
                   name: device['device_id'],
                   status: 'Online', // Example status
                   timestamp: device['timestamp'],
-                  data: Map<String, dynamic>.from(device['data']),
+                  data: Map<String, dynamic>.from(device['deviceData']),
                 ))
             .toList();
       });
