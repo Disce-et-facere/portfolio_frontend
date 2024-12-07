@@ -6,7 +6,6 @@ import { createDevice } from './lambdas/createDevice/resource';
 import { fetchDevices } from './lambdas/fetchDevices/resource';
 import { deleteDevice } from './lambdas/deleteDevice/resource';
 import {fetchDeviceData} from './lambdas/fetchDeviceData/resource'
-//import { telemetryTroubleshootingHandler } from './lambdas/telemetry-troubleshooting/resource';
 
 export const backend = defineBackend({
   auth,
@@ -15,8 +14,6 @@ export const backend = defineBackend({
   fetchDevices, // FetchDevices depends on DynamoDB
   deleteDevice,
   fetchDeviceData,
-  //telemetryTroubleshootingHandler,
-
 });
 
 //

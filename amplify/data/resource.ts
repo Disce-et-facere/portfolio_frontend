@@ -6,7 +6,7 @@ export const schema = a.schema({
       device_id: a.string().required(),
       timestamp: a.timestamp().required(),
       ownerID: a.string().required(),
-      data: a.json().required(),
+      deviceData: a.json().required(),
     })
     .identifier(['device_id', 'timestamp']) // Composite primary key
     .secondaryIndexes((index) => [

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:amplify_flutter/amplify_flutter.dart';
-import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import '../settings/settings_controller.dart';
 import '../widgets/toolbar.dart';
 import '../widgets/device_detail_screen.dart';
@@ -57,53 +55,46 @@ class _LoggedInPageState extends State<Dashboard> {
     }
   }
 
-  Future<String> _getAccessToken() async {
-    try {
-      final cognitoPlugin = Amplify.Auth.getPlugin(AmplifyAuthCognito.pluginKey);
-      final cognitoSession = await cognitoPlugin.fetchAuthSession();
-      final tokens = cognitoSession.userPoolTokensResult.value;
-      return tokens.accessToken.raw;
-    } catch (e) {
-      debugPrint('Error fetching access token: $e');
-      throw Exception('Failed to fetch access token.');
-    }
-  }
-
-  Future<void> _fetchDevices() async {
-    final String accessToken = await _getAccessToken();
-    const String apiUrl = 'https://1f0g21n1ef.execute-api.eu-central-1.amazonaws.com';
-
-    try {
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $accessToken',
-        },
-        body: jsonEncode({'ownerID': ownerId}),
-      );
-
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        final List<dynamic> devicesData = responseData['devices'];
-
-        setState(() {
-          devices = devicesData
-              .map((device) => Device(
-                    name: device['deviceId'],
-                    status: 'Online', // Example status
-                    timestamp: device['timestamp'],
-                    data: Map<String, dynamic>.from(device['data']),
-                  ))
-              .toList();
-        });
-      } else {
-        debugPrint('Failed to fetch devices. Status: ${response.statusCode}');
+ Future<void> _fetchDevices() async {
+  const query = '''
+    query ListDevicesByOwnerID(\$ownerID: ID!) {
+      listDevicesByOwnerID(ownerID: \$ownerID) {
+        device_id
+        timestamp
+        data
       }
-    } catch (e) {
-      debugPrint('Error fetching devices: $e');
     }
+  ''';
+
+  try {
+    final response = await Amplify.API.query<String>(
+      request: GraphQLRequest<String>(
+        document: query,
+        variables: {'ownerID': ownerId},
+      ),
+    ).response;
+
+    if (response.data != null) {
+      final decoded = jsonDecode(response.data!) as Map<String, dynamic>;
+      final List<dynamic> devicesData = decoded['listDevicesByOwnerID'] ?? [];
+
+      setState(() {
+        devices = devicesData
+            .map((device) => Device(
+                  name: device['device_id'],
+                  status: 'Online', // Example status
+                  timestamp: device['timestamp'],
+                  data: Map<String, dynamic>.from(device['data']),
+                ))
+            .toList();
+      });
+    } else {
+      debugPrint('No devices found.');
+    }
+  } catch (e) {
+    debugPrint('Error fetching devices: $e');
   }
+}
 
   Future<void> _fetchUserEmail() async {
     try {
