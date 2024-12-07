@@ -1,9 +1,9 @@
 const amplifyConfig = r'''{
-  "auth": {
-    "user_pool_id": "eu-central-1_8CahOmFtu",
+   "auth": {
+    "user_pool_id": "eu-central-1_VwwkOoyQA",
     "aws_region": "eu-central-1",
-    "user_pool_client_id": "607439gcflutsmha0cfd3vri08",
-    "identity_pool_id": "eu-central-1:e63e7105-19ca-4765-aa6e-75459a4bd023",
+    "user_pool_client_id": "3anbc7ocnkah5pjsrhfpa3mjur",
+    "identity_pool_id": "eu-central-1:8aeabdd7-20f4-495a-ac39-221f0074224f",
     "mfa_methods": [],
     "standard_required_attributes": [
       "email"
@@ -25,7 +25,7 @@ const amplifyConfig = r'''{
     "unauthenticated_identities_enabled": true
   },
   "data": {
-    "url": "https://trmwgi2xcnafrgqnbattumvuei.appsync-api.eu-central-1.amazonaws.com/graphql",
+    "url": "https://smgspdcmfzdatlxjgtobdpgqh4.appsync-api.eu-central-1.amazonaws.com/graphql",
     "aws_region": "eu-central-1",
     "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
     "authorization_types": [
@@ -58,8 +58,8 @@ const amplifyConfig = r'''{
               "isRequired": true,
               "attributes": []
             },
-            "data": {
-              "name": "data",
+            "deviceData": {
+              "name": "deviceData",
               "isArray": false,
               "type": "AWSJSON",
               "isRequired": true,
