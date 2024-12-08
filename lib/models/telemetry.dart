@@ -23,7 +23,7 @@ import 'ModelProvider.dart';
 import 'package:amplify_core/amplify_core.dart' as amplify_core;
 
 
-/** This is an auto generated class representing the telemetry type in your schema. */
+/** Thiss is an auto generated class representing the telemetry type in your schema. */
 class telemetry extends amplify_core.Model {
   static const classType = const _telemetryModelType();
   final String? _device_id;
