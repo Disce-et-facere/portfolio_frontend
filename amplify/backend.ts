@@ -24,8 +24,8 @@ export const backend = defineBackend({
 const createDeviceLambda = backend.createDevice.resources.lambda;
 
 // Define the IoT policy
-const iotPolicy = new iot.CfnPolicy(createDeviceLambda, 'DevicePolicy-sandbox', {
-  policyName: 'DevicePolicy-sandbox',
+const iotPolicy = new iot.CfnPolicy(createDeviceLambda, 'DevicePolicy', {
+  policyName: 'DevicePolicy',
   policyDocument: {
     Version: '2012-10-17',
     Statement: [
