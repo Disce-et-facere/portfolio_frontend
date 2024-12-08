@@ -106,7 +106,7 @@ class telemetry extends amplify_core.Model {
     }
   }
   
-  const telemetry._internal({required device_id, required timestamp, required ownerID, required deviceData, createdAt, updatedAt}): _device_id = device_id, _timestamp = timestamp, _ownerID = ownerID, _deviceData = deviceData;
+  const telemetry._internal({required device_id, required timestamp, required ownerID, required deviceData}): _device_id = device_id, _timestamp = timestamp, _ownerID = ownerID, _deviceData = deviceData;
   
   factory telemetry({required String device_id, required amplify_core.TemporalTimestamp timestamp, required String ownerID, required String deviceData}) {
     return telemetry._internal(
@@ -139,16 +139,16 @@ class telemetry extends amplify_core.Model {
     
     buffer.write("telemetry {");
     buffer.write("device_id=" + "$_device_id" + ", ");
-    buffer.write("timestamp=" + (_timestamp != null ? _timestamp.toString() : "null") + ", ");
+    buffer.write("timestamp=" + (_timestamp != null ? _timestamp!.toString() : "null") + ", ");
     buffer.write("ownerID=" + "$_ownerID" + ", ");
-    buffer.write("deviceData=" + "$_deviceData" + ", ");
+    buffer.write("deviceData=" + "$_deviceData");
     buffer.write("}");
     
     return buffer.toString();
   }
   
   telemetry copyWith({String? ownerID, String? deviceData}) {
-    return telemetry._internal(
+    return telemetry(
       device_id: device_id,
       timestamp: timestamp,
       ownerID: ownerID ?? this.ownerID,
@@ -159,7 +159,7 @@ class telemetry extends amplify_core.Model {
     ModelFieldValue<String>? ownerID,
     ModelFieldValue<String>? deviceData
   }) {
-    return telemetry._internal(
+    return telemetry(
       device_id: device_id,
       timestamp: timestamp,
       ownerID: ownerID == null ? this.ownerID : ownerID.value,
@@ -174,14 +174,14 @@ class telemetry extends amplify_core.Model {
       _deviceData = json['deviceData'];
   
   Map<String, dynamic> toJson() => {
-    'device_id': _device_id, 'timestamp': _timestamp?.toSeconds(), 'ownerID': _ownerID, 'deviceData': _deviceData,
+    'device_id': _device_id, 'timestamp': _timestamp?.toSeconds(), 'ownerID': _ownerID, 'deviceData': _deviceData
   };
   
   Map<String, Object?> toMap() => {
     'device_id': _device_id,
     'timestamp': _timestamp,
     'ownerID': _ownerID,
-    'deviceData': _deviceData,
+    'deviceData': _deviceData
   };
 
   static final amplify_core.QueryModelIdentifier<telemetryModelIdentifier> MODEL_IDENTIFIER = amplify_core.QueryModelIdentifier<telemetryModelIdentifier>();
@@ -232,20 +232,6 @@ class telemetry extends amplify_core.Model {
       key: telemetry.DEVICEDATA,
       isRequired: true,
       ofType: amplify_core.ModelFieldType(amplify_core.ModelFieldTypeEnum.string)
-    ));
-    
-    modelSchemaDefinition.addField(amplify_core.ModelFieldDefinition.nonQueryField(
-      fieldName: 'createdAt',
-      isRequired: false,
-      isReadOnly: true,
-      ofType: amplify_core.ModelFieldType(amplify_core.ModelFieldTypeEnum.dateTime)
-    ));
-    
-    modelSchemaDefinition.addField(amplify_core.ModelFieldDefinition.nonQueryField(
-      fieldName: 'updatedAt',
-      isRequired: false,
-      isReadOnly: true,
-      ofType: amplify_core.ModelFieldType(amplify_core.ModelFieldTypeEnum.dateTime)
     ));
   });
 }
