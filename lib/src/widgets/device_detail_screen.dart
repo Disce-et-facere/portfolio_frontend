@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart'; // For graphing
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/device.dart';
+import '../../models/telemetry.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 
 class DeviceDetailScreen extends StatefulWidget {
-  final Device device;
+  final telemetry device; // Update to use telemetry
 
   const DeviceDetailScreen({super.key, required this.device});
 
@@ -26,7 +26,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
 
   Future<Map<String, GraphData>> _prepareData() async {
     final String ownerId = await _getOwnerId();
-    return _fetchDeviceData(widget.device.name, ownerId);
+    return _fetchDeviceData(widget.device.device_id, ownerId);
   }
 
   Future<String> _getAccessToken() async {
@@ -61,12 +61,12 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
     }
   }
 
-  Future<Map<String, GraphData>> _fetchDeviceData(String deviceName, String ownerId) async {
+  Future<Map<String, GraphData>> _fetchDeviceData(String deviceId, String ownerId) async {
     const apiUrl = 'https://6zqrep9in8.execute-api.eu-central-1.amazonaws.com';
     final String accessToken = await _getAccessToken();
 
     try {
-      final urlWithParams = Uri.parse('$apiUrl?deviceId=$deviceName&ownerID=$ownerId');
+      final urlWithParams = Uri.parse('$apiUrl?deviceId=$deviceId&ownerID=$ownerId');
       final response = await http.get(
         urlWithParams,
         headers: {
@@ -118,77 +118,11 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
     }
   }
 
-  Future<void> _deleteDevice() async {
-    const deleteApiUrl = 'https://eipbe1x47k.execute-api.eu-central-1.amazonaws.com';
-    final String accessToken = await _getAccessToken();
-    final String ownerId = await _getOwnerId();
-
-    try {
-      final urlWithParams = Uri.parse('$deleteApiUrl?deviceId=${widget.device.name}&ownerID=$ownerId');
-      final response = await http.delete(
-        urlWithParams,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $accessToken',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        debugPrint('Device deleted successfully.');
-        if (mounted) {
-          Navigator.pop(context);
-        }
-      } else {
-        debugPrint('Failed to delete device. Status: ${response.statusCode}');
-        throw Exception('Failed to delete device.');
-      }
-    } catch (e) {
-      debugPrint('Error deleting device: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error deleting device: $e')),
-        );
-      }
-    }
-  }
-
-
-  Future<void> _showDeleteConfirmationDialog() async {
-    final bool confirmed = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Confirm Deletion'),
-            content: const Text('Are you sure you want to delete this device?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-
-    if (confirmed) {
-      await _deleteDevice();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Device Details: ${widget.device.name}'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: _showDeleteConfirmationDialog,
-          ),
-        ],
+        title: Text('Device Details: ${widget.device.device_id}'), // Updated to use device_id
       ),
       body: FutureBuilder<Map<String, GraphData>>(
         future: _deviceDataFuture,

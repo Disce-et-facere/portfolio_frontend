@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import 'package:amplify_flutter/amplify_flutter.dart';
+import 'package:amplify_api/amplify_api.dart'; // For ModelQueries
 import '../settings/settings_controller.dart';
 import '../widgets/toolbar.dart';
 import '../widgets/device_detail_screen.dart';
-import '../models/device.dart';
+import '../../models/telemetry.dart'; // Generated telemetry model
+import '../../models/ModelProvider.dart'; // Required for ModelQueries
 
 class Dashboard extends StatefulWidget {
   const Dashboard({
@@ -15,15 +16,14 @@ class Dashboard extends StatefulWidget {
   final SettingsController settingsController;
 
   @override
-  State<Dashboard> createState() => _LoggedInPageState();
+  State<Dashboard> createState() => _DashboardState();
 }
 
-class _LoggedInPageState extends State<Dashboard> {
+class _DashboardState extends State<Dashboard> {
   String? userEmail;
   String ownerId = '';
   bool isLoading = true;
-  List<Device> devices = [];
-
+  List<telemetry> devices = [];
   late ScrollController _scrollController;
 
   @override
@@ -52,10 +52,6 @@ class _LoggedInPageState extends State<Dashboard> {
       setState(() {
         userEmail = 'Unknown';
       });
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
     }
   }
 
@@ -81,80 +77,24 @@ class _LoggedInPageState extends State<Dashboard> {
   }
 
   Future<void> _fetchDevices() async {
-    const query = '''
-      query ListDevicesByOwnerID(\$ownerID: ID!) {
-        listDevicesByOwnerID(ownerID: \$ownerID) {
-          device_id
-          timestamp
-          deviceData
-        }
-      }
-    ''';
-
     try {
-      final response = await Amplify.API.query<String>(
-        request: GraphQLRequest<String>(
-          document: query,
-          variables: {'ownerID': ownerId},
-        ),
-      ).response;
+      final request = ModelQueries.list(
+        telemetry.classType,
+        where: telemetry.OWNERID.eq(ownerId), // Query devices by ownerID
+      );
+
+      final response = await Amplify.API.query(request: request).response;
 
       if (response.data != null) {
-        final decoded = jsonDecode(response.data!) as Map<String, dynamic>;
-        final List<dynamic> devicesData = decoded['listDevicesByOwnerID'] ?? [];
-
         setState(() {
-          devices = devicesData
-              .map((device) => Device(
-                    name: device['device_id'],
-                    status: 'Fetching...', // Placeholder for shadow data
-                    timestamp: device['timestamp'],
-                    data: Map<String, dynamic>.from(device['deviceData']),
-                  ))
-              .toList();
+          devices = response.data!.items.whereType<telemetry>().toList();
         });
-
-        // Fetch shadow data for each device
-        for (final device in devices) {
-          await _fetchShadow(device.name);
-        }
+        // Optionally fetch shadow data here if needed
       } else {
         debugPrint('No devices found.');
       }
     } catch (e) {
       debugPrint('Error fetching devices: $e');
-    }
-  }
-
-  Future<void> _fetchShadow(String deviceId) async {
-    debugPrint('Fetching shadow data for device: $deviceId');
-    const shadowGetTopic = '\$aws/things/{deviceId}/shadow/get';
-
-    try {
-      final shadowResponse = await Amplify.API.query<String>(
-        request: GraphQLRequest<String>(
-          document: shadowGetTopic.replaceAll('{deviceId}', deviceId),
-        ),
-      ).response;
-
-      if (shadowResponse.data != null) {
-        final shadowData = jsonDecode(shadowResponse.data!) as Map<String, dynamic>;
-
-        setState(() {
-          devices = devices.map((device) {
-            if (device.name == deviceId) {
-              device.status = shadowData['state']['reported']['status'] ?? 'Unknown';
-              device.data = Map<String, dynamic>.from(
-                  shadowData['state']['reported']['deviceData'] ?? {});
-            }
-            return device;
-          }).toList();
-        });
-      } else {
-        debugPrint('No shadow data for device: $deviceId');
-      }
-    } catch (e) {
-      debugPrint('Error fetching shadow for $deviceId: $e');
     }
   }
 
@@ -259,7 +199,7 @@ class _LoggedInPageState extends State<Dashboard> {
 }
 
 class DeviceCard extends StatelessWidget {
-  final Device device;
+  final telemetry device;
 
   const DeviceCard({super.key, required this.device});
 
@@ -268,7 +208,7 @@ class DeviceCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     final formattedTimestamp = DateTime.fromMillisecondsSinceEpoch(
-      device.timestamp * 1000,
+      device.timestamp.toSeconds() * 1000,
     ).toString();
 
     return Card(
@@ -282,14 +222,11 @@ class DeviceCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Device ID: ${device.name}',
+                'Device ID: ${device.device_id}',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              Text('Status: ${device.status}'),
               Text('Last Updated: $formattedTimestamp'),
-              ...device.data.entries.map((entry) {
-                return Text('${entry.key}: ${entry.value}');
-              }).toList(),
+              Text('Data: ${device.deviceData}'),
             ],
           ),
         ),
