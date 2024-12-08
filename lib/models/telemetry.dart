@@ -30,8 +30,6 @@ class telemetry extends amplify_core.Model {
   final amplify_core.TemporalTimestamp? _timestamp;
   final String? _ownerID;
   final String? _deviceData;
-  final amplify_core.TemporalDateTime? _createdAt;
-  final amplify_core.TemporalDateTime? _updatedAt;
 
   @override
   getInstanceType() => classType;
@@ -108,15 +106,7 @@ class telemetry extends amplify_core.Model {
     }
   }
   
-  amplify_core.TemporalDateTime? get createdAt {
-    return _createdAt;
-  }
-  
-  amplify_core.TemporalDateTime? get updatedAt {
-    return _updatedAt;
-  }
-  
-  const telemetry._internal({required device_id, required timestamp, required ownerID, required deviceData, createdAt, updatedAt}): _device_id = device_id, _timestamp = timestamp, _ownerID = ownerID, _deviceData = deviceData, _createdAt = createdAt, _updatedAt = updatedAt;
+  const telemetry._internal({required device_id, required timestamp, required ownerID, required deviceData, createdAt, updatedAt}): _device_id = device_id, _timestamp = timestamp, _ownerID = ownerID, _deviceData = deviceData;
   
   factory telemetry({required String device_id, required amplify_core.TemporalTimestamp timestamp, required String ownerID, required String deviceData}) {
     return telemetry._internal(
@@ -152,8 +142,6 @@ class telemetry extends amplify_core.Model {
     buffer.write("timestamp=" + (_timestamp != null ? _timestamp.toString() : "null") + ", ");
     buffer.write("ownerID=" + "$_ownerID" + ", ");
     buffer.write("deviceData=" + "$_deviceData" + ", ");
-    buffer.write("createdAt=" + (_createdAt != null ? _createdAt.format() : "null") + ", ");
-    buffer.write("updatedAt=" + (_updatedAt != null ? _updatedAt.format() : "null"));
     buffer.write("}");
     
     return buffer.toString();
@@ -183,12 +171,10 @@ class telemetry extends amplify_core.Model {
     : _device_id = json['device_id'],
       _timestamp = json['timestamp'] != null ? amplify_core.TemporalTimestamp.fromSeconds(json['timestamp']) : null,
       _ownerID = json['ownerID'],
-      _deviceData = json['deviceData'],
-      _createdAt = json['createdAt'] != null ? amplify_core.TemporalDateTime.fromString(json['createdAt']) : null,
-      _updatedAt = json['updatedAt'] != null ? amplify_core.TemporalDateTime.fromString(json['updatedAt']) : null;
+      _deviceData = json['deviceData'];
   
   Map<String, dynamic> toJson() => {
-    'device_id': _device_id, 'timestamp': _timestamp?.toSeconds(), 'ownerID': _ownerID, 'deviceData': _deviceData, 'createdAt': _createdAt?.format(), 'updatedAt': _updatedAt?.format()
+    'device_id': _device_id, 'timestamp': _timestamp?.toSeconds(), 'ownerID': _ownerID, 'deviceData': _deviceData,
   };
   
   Map<String, Object?> toMap() => {
@@ -196,8 +182,6 @@ class telemetry extends amplify_core.Model {
     'timestamp': _timestamp,
     'ownerID': _ownerID,
     'deviceData': _deviceData,
-    'createdAt': _createdAt,
-    'updatedAt': _updatedAt
   };
 
   static final amplify_core.QueryModelIdentifier<telemetryModelIdentifier> MODEL_IDENTIFIER = amplify_core.QueryModelIdentifier<telemetryModelIdentifier>();
