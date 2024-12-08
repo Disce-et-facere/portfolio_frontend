@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_api/amplify_api.dart'; // For ModelQueries
 import '../settings/settings_controller.dart';
+import 'dart:convert';
 import '../widgets/toolbar.dart';
 import '../widgets/device_detail_screen.dart';
 import '../../models/telemetry.dart'; // Generated telemetry model
@@ -76,27 +77,77 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
-  Future<void> _fetchDevices() async {
-    try {
-      final request = ModelQueries.list(
-        telemetry.classType,
-        where: telemetry.OWNERID.eq(ownerId), // Query devices by ownerID
-      );
+ Future<void> _fetchDevices() async {
+  debugPrint('Fetching devices for ownerId: $ownerId');
 
-      final response = await Amplify.API.query(request: request).response;
+  try {
+    final request = ModelQueries.list(
+      telemetry.classType,
+      where: telemetry.OWNERID.eq(ownerId), // Query devices by ownerID
+    );
 
-      if (response.data != null) {
-        setState(() {
-          devices = response.data!.items.whereType<telemetry>().toList();
-        });
-        // Optionally fetch shadow data here if needed
-      } else {
-        debugPrint('No devices found.');
+    debugPrint('Sending query: $request');
+
+    final response = await Amplify.API.query(request: request).response;
+
+    if (response.data != null) {
+      final items = response.data!.items.whereType<telemetry>().toList();
+
+      debugPrint('Fetched ${items.length} devices from database.');
+
+      setState(() {
+        devices = items;
+      });
+
+      // Optionally update devices with shadow data
+      for (final device in items) {
+        debugPrint('Fetching shadow data for device: ${device.device_id}');
+        _updateDeviceWithShadowData(device);
       }
-    } catch (e) {
-      debugPrint('Error fetching devices: $e');
+    } else {
+      debugPrint('No devices found.');
     }
+  } catch (e) {
+    debugPrint('Error fetching devices: $e');
   }
+}
+
+Future<void> _updateDeviceWithShadowData(telemetry device) async {
+  final shadowGetTopic = '\$aws/things/${device.device_id}/shadow/get';
+
+  try {
+    final shadowResponse = await Amplify.API.query<String>(
+      request: GraphQLRequest<String>(
+        document: shadowGetTopic,
+      ),
+    ).response;
+
+    if (shadowResponse.data != null) {
+      final shadowData = jsonDecode(shadowResponse.data!) as Map<String, dynamic>;
+
+      debugPrint('Shadow data for device ${device.device_id}: $shadowData');
+
+      setState(() {
+        devices = devices.map((existingDevice) {
+          if (existingDevice.device_id == device.device_id) {
+            // Update the existing device with shadow data
+            return telemetry(
+              device_id: existingDevice.device_id,
+              timestamp: existingDevice.timestamp,
+              ownerID: existingDevice.ownerID,
+              deviceData: jsonEncode(shadowData['state']['reported']['deviceData'] ?? {}),
+            );
+          }
+          return existingDevice;
+        }).toList();
+      });
+    } else {
+      debugPrint('No shadow data found for device: ${device.device_id}');
+    }
+  } catch (e) {
+    debugPrint('Error fetching shadow for device ${device.device_id}: $e');
+  }
+}
 
   Future<void> _signOut() async {
     try {
