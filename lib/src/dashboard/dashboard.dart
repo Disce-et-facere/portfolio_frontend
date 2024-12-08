@@ -90,6 +90,9 @@ class _DashboardState extends State<Dashboard> {
 
     final response = await Amplify.API.query(request: request).response;
 
+    debugPrint('Query response: ${response.data}');
+    debugPrint('Response errors: ${response.errors}');
+
     if (response.data != null) {
       final items = response.data!.items.whereType<telemetry>().toList();
 
