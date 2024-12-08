@@ -26,7 +26,7 @@ export 'telemetry.dart';
 
 class ModelProvider implements amplify_core.ModelProviderInterface {
   @override
-  String version = "b1ad1832ffde81d329d1888a70b7ec58";
+  String version = "19ae6d0dfe3b415ce7227325c560854f";
   @override
   List<amplify_core.ModelSchema> modelSchemas = [telemetry.schema];
   @override
