@@ -245,7 +245,7 @@ Future<void> _fetchShadow(String deviceId) async {
               ),
               const SizedBox(height: 16),
               Expanded(
-                flex: 1, // Allocate less space for the MessageBoard
+                flex: 2, // Allocate less space for the MessageBoard
                 child: MessageBoard(messages: messages),
               ),
             ],
@@ -273,7 +273,7 @@ class DeviceCard extends StatelessWidget {
 
     final formattedTimestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(
       DateTime.fromMillisecondsSinceEpoch(
-      device.timestamp.toSeconds(),
+      device.timestamp.toSeconds() * 1000,
       ).toLocal(),
     );
 
@@ -324,9 +324,9 @@ class DeviceCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: deviceDataMap.entries.map((entry) {
                 if (entry.key == 'status') return Container();
-                if (entry.key.endsWith('-unit')) return Container();
+                if (entry.key.endsWith('-Unit')) return Container();
 
-                final unitKey = '${entry.key}-unit';
+                final unitKey = '${entry.key}-Unit';
                 final unit = deviceDataMap[unitKey] ?? '';
 
                 return Text(
