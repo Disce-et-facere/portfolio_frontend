@@ -1,7 +1,7 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import AWS from 'aws-sdk';
 
-const iotData = new AWS.IotData({ endpoint: process.env.IOT_ENDPOINT });
+const iotData = new AWS.IotData({ endpoint: process.env.IOT_CORE_ENDPOINT });
 
 export const handler = async (event: APIGatewayProxyEvent) => {
   console.log('Event:', JSON.stringify(event, null, 2));
