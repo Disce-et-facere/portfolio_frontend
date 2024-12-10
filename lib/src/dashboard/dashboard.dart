@@ -113,17 +113,27 @@ class _DashboardState extends State<Dashboard> {
 Future<void> _fetchShadow(String deviceId) async {
   debugPrint('Fetching shadow data for device: $deviceId');
 
-  const shadowGetTopic = '\$aws/things/{deviceId}/shadow/get';
+  const fetchShadowQuery = '''
+    query FetchDeviceShadow(\$deviceId: String!) {
+      fetchDeviceShadow(deviceId: \$deviceId) {
+        deviceId
+        status
+        deviceData
+      }
+    }
+  ''';
 
   try {
+    // Execute the GraphQL query
     final shadowResponse = await Amplify.API.query<String>(
       request: GraphQLRequest<String>(
-        document: shadowGetTopic.replaceAll('{deviceId}', deviceId),
+        document: fetchShadowQuery,
+        variables: {'deviceId': deviceId},
       ),
     ).response;
 
     if (shadowResponse.data != null) {
-      final shadowData = jsonDecode(shadowResponse.data!) as Map<String, dynamic>;
+      final shadowData = jsonDecode(shadowResponse.data!)['fetchDeviceShadow'];
 
       setState(() {
         devices = devices.map((device) {
@@ -131,14 +141,13 @@ Future<void> _fetchShadow(String deviceId) async {
             return device.copyWith(
               deviceData: jsonEncode({
                 ...(jsonDecode(device.deviceData) as Map<String, dynamic>),
-                'status': shadowData['state']['reported']['status'] ?? 'Unknown',
+                'status': shadowData['status'] ?? 'Unknown',
               }),
             );
           }
           return device;
         }).toList();
       });
-
     } else {
       debugPrint('No shadow data for device: $deviceId');
     }
@@ -146,6 +155,7 @@ Future<void> _fetchShadow(String deviceId) async {
     debugPrint('Error fetching shadow for $deviceId: $e');
   }
 }
+
 
   Future<void> _signOut() async {
     try {
@@ -236,8 +246,8 @@ Future<void> _fetchShadow(String deviceId) async {
               const SizedBox(height: 16),
               Expanded(
                 child: devices.isEmpty
-                    ? MessageBoard(messages: messages, devices: devices)
-                    : MessageBoard(messages: messages, devices: devices),
+                    ? MessageBoard(messages: messages)
+                    : MessageBoard(messages: messages),
               ),
             ],
           ),
@@ -254,63 +264,71 @@ class DeviceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     final deviceDataMap = jsonDecode(device.deviceData) as Map<String, dynamic>;
-    final status = deviceDataMap.containsKey('status') ? deviceDataMap['status'] : 'Unknown';
+    final status = deviceDataMap['status'] ?? 'Unknown';
 
     final formattedTimestamp = DateTime.fromMillisecondsSinceEpoch(
-      (device.timestamp.toSeconds() * 1000).toInt(),
-    ).toString();
+      device.timestamp.toSeconds() * 1000,
+    ).toLocal();
 
     return Card(
-      color: colorScheme.surface,
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       elevation: 4,
-      child: SizedBox(
-        width: 240,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    status == 'Online' ? Icons.check_circle : Icons.error,
-                    color: status == 'Online' ? Colors.green : Colors.red,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Device ID: ${device.device_id}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Status: $status',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Column(
+              children: [
+                Icon(
+                  status == 'Online' ? Icons.check_circle : Icons.error,
                   color: status == 'Online' ? Colors.green : Colors.red,
+                  size: 36,
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  'Device ID: ${device.device_id}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Status: $status',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: status == 'Online' ? Colors.green : Colors.red,
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Last Updated: $formattedTimestamp',
-                style: const TextStyle(fontSize: 12),
-              ),
-              const SizedBox(height: 8),
-              // Display other device data
-              ...deviceDataMap.entries.map((entry) {
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Last Updated: ${formattedTimestamp.toString()}',
+              style: const TextStyle(fontSize: 12),
+            ),
+            const Divider(),
+            // Display other device data
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: deviceDataMap.entries.map((entry) {
                 if (entry.key == 'status') return Container(); // Skip status
+                if (entry.key.endsWith('-unit')) return Container(); // Skip unit keys directly
+
+                final unitKey = '${entry.key}-unit';
+                final unit = deviceDataMap.containsKey(unitKey) ? deviceDataMap[unitKey] : '';
+
                 return Text(
-                  '${entry.key}: ${entry.value}',
+                  '${entry.key}: ${entry.value} $unit',
                   style: const TextStyle(fontSize: 12),
                 );
               }).toList(),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -325,16 +343,14 @@ class Message {
   Message({required this.content, required this.type});
 }
 
-enum MessageType { warning, alert }
+enum MessageType { warning, alert, info }
 
 class MessageBoard extends StatelessWidget {
   final List<Message> messages;
-  final List<telemetry> devices; // Pass the devices list as a parameter
 
   const MessageBoard({
     super.key,
     required this.messages,
-    required this.devices,
   });
 
   @override
@@ -351,16 +367,25 @@ class MessageBoard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Message Board - Dummies',
+              'Message Board',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const Divider(),
             Expanded(
-              child: devices.isEmpty
-                  ? ListView(
-                      children: messages.map((message) {
-                        final color = message.type == MessageType.warning ? Colors.orange : Colors.red;
-                        final icon = message.type == MessageType.warning ? Icons.warning : Icons.error;
+              child: messages.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No messages to display.',
+                        style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final message = messages[index];
+                        final color = _getMessageColor(message.type);
+                        final icon = _getMessageIcon(message.type);
+
                         return ListTile(
                           leading: Icon(icon, color: color),
                           title: Text(
@@ -368,11 +393,7 @@ class MessageBoard extends StatelessWidget {
                             style: TextStyle(color: color),
                           ),
                         );
-                      }).toList(),
-                    )
-                  : ListView.builder(
-                      itemCount: devices.length,
-                      itemBuilder: (context, index) => DeviceCard(device: devices[index]),
+                      },
                     ),
             ),
           ],
@@ -380,4 +401,31 @@ class MessageBoard extends StatelessWidget {
       ),
     );
   }
+
+  Color _getMessageColor(MessageType type) {
+    switch (type) {
+      case MessageType.warning:
+        return Colors.orange;
+      case MessageType.alert:
+        return Colors.red;
+      case MessageType.info:
+        return Colors.blue;
+      default:
+        return Colors.black;
+    }
+  }
+
+  IconData _getMessageIcon(MessageType type) {
+    switch (type) {
+      case MessageType.warning:
+        return Icons.warning;
+      case MessageType.alert:
+        return Icons.error;
+      case MessageType.info:
+        return Icons.info;
+      default:
+        return Icons.message;
+    }
+  }
 }
+

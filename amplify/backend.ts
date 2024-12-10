@@ -7,6 +7,7 @@ import { createDevice } from './lambdas/createDevice/resource';
 import { fetchDevices } from './lambdas/fetchDevices/resource';
 import { deleteDevice } from './lambdas/deleteDevice/resource';
 import {fetchDeviceData} from './lambdas/fetchDeviceData/resource'
+import { fetchDeviceShadow } from './lambdas/fetchDeviceShadow/resource';
 
 export const backend = defineBackend({
   auth,
@@ -15,6 +16,7 @@ export const backend = defineBackend({
   fetchDevices, // FetchDevices depends on DynamoDB
   deleteDevice,
   fetchDeviceData,
+  fetchDeviceShadow,
 });
 
 //
@@ -130,3 +132,16 @@ const dynamoDbFetchDeviceDataPolicy = new iam.PolicyStatement({
 });
 
 fetchDeviceDataLambda.addToRolePolicy(dynamoDbFetchDeviceDataPolicy);
+
+//permission for fetchDeviceShadow
+const fetchDeviceShadowLambda = backend.fetchDeviceShadow.resources.lambda;
+
+const iotPolicyShadow = new iam.PolicyStatement({
+  effect: iam.Effect.ALLOW,
+  actions: [
+    'iot:GetThingShadow',
+  ],
+  resources: ['arn:aws:iot:eu-central-1:891612540400:thing/*'],
+});
+
+fetchDeviceShadowLambda.addToRolePolicy(iotPolicyShadow);
