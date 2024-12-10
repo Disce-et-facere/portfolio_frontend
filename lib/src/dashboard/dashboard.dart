@@ -3,7 +3,7 @@ import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_api/amplify_api.dart'; // For ModelQueries
 import '../settings/settings_controller.dart';
 import 'dart:convert';
-import 'package:intl/intl.dart';
+//import 'package:intl/intl.dart';
 import '../widgets/toolbar.dart';
 import '../widgets/device_detail_screen.dart';
 import '../../models/telemetry.dart'; // Generated telemetry model
@@ -111,57 +111,42 @@ class _DashboardState extends State<Dashboard> {
   }
 }
 
-Future<void> _fetchShadow(String deviceId) async {
-  debugPrint('Fetching shadow data for device: $deviceId');
+Map<String, String> deviceStatuses = {}; // Map to hold the device statuses
 
-  const queryDocument = '''
-    query FetchDeviceShadow(\$deviceId: String!) {
-      fetchDeviceShadow(deviceId: \$deviceId) {
-        deviceId
-        status
-        deviceData
-      }
-    }
-  ''';
+Future<void> _fetchShadow(String deviceId) async {
+  debugPrint('Fetching shadow status for device: $deviceId');
 
   try {
     final response = await Amplify.API.query<String>(
       request: GraphQLRequest<String>(
-        document: queryDocument,
+        document: '''
+          query FetchDeviceShadow(\$deviceId: String!) {
+            fetchDeviceShadow(deviceId: \$deviceId) {
+              deviceId
+              status
+            }
+          }
+        ''',
         variables: {'deviceId': deviceId},
       ),
     ).response;
 
     if (response.data != null) {
-      final shadowData = jsonDecode(response.data!) as Map<String, dynamic>;
+      final shadowData = jsonDecode(response.data!)['fetchDeviceShadow'];
 
-      debugPrint('Shadow Data for $deviceId: $shadowData');
+      if (shadowData != null) {
+        final status = shadowData['status'] ?? 'Unknown';
 
-      final fetchedShadow = shadowData['fetchDeviceShadow'];
-      if (fetchedShadow == null) {
-        debugPrint('No shadow data returned for device: $deviceId');
-        return;
+        setState(() {
+          deviceStatuses[deviceId] = status; // Update the status in the map
+        });
+
+        debugPrint('Updated status for device $deviceId: $status');
+      } else {
+        debugPrint('Shadow status for $deviceId is null.');
       }
-
-      final status = fetchedShadow['status'] ?? 'Unknown';
-      final deviceData = fetchedShadow['deviceData'] ?? {};
-
-      setState(() {
-        devices = devices.map((device) {
-          if (device.device_id == deviceId) {
-            return device.copyWith(
-              deviceData: jsonEncode({
-                ...(jsonDecode(device.deviceData) as Map<String, dynamic>),
-                'status': status,
-                ...deviceData,
-              }),
-            );
-          }
-          return device;
-        }).toList();
-      });
     } else {
-      debugPrint('No data received from shadow query for device: $deviceId');
+      debugPrint('No shadow data returned for device: $deviceId');
     }
   } catch (e) {
     debugPrint('Error fetching shadow for $deviceId: $e');
@@ -268,80 +253,80 @@ Future<void> _fetchShadow(String deviceId) async {
 
 class DeviceCard extends StatelessWidget {
   final telemetry device;
+  final String? status; // Accept status dynamically
 
-  const DeviceCard({super.key, required this.device});
+  const DeviceCard({
+    super.key,
+    required this.device,
+    this.status,
+  });
 
   @override
   Widget build(BuildContext context) {
     final deviceDataMap = jsonDecode(device.deviceData) as Map<String, dynamic>;
-    final status = deviceDataMap['status'] ?? 'Unknown';
+    final currentStatus = status ?? 'Unknown';
 
-    final formattedTimestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(
-      DateTime.fromMillisecondsSinceEpoch(
-        device.timestamp.toSeconds() * 1000,
-      ).toLocal(),
-    );
+    final formattedTimestamp = DateTime.fromMillisecondsSinceEpoch(
+      device.timestamp.toSeconds(),
+    ).toLocal();
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       elevation: 4,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: IntrinsicHeight(
-          // Ensures the card height fits its content
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Column(
-                children: [
-                  Icon(
-                    status == 'Online' ? Icons.check_circle : Icons.error,
-                    color: status == 'Online' ? Colors.green : Colors.red,
-                    size: 36,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Device ID: ${device.device_id}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Status: $status',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: status == 'Online' ? Colors.green : Colors.red,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Column(
+              children: [
+                Icon(
+                  currentStatus == 'Online' ? Icons.check_circle : Icons.error,
+                  color: currentStatus == 'Online' ? Colors.green : Colors.red,
+                  size: 36,
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  'Device ID: ${device.device_id}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Status: $currentStatus',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: currentStatus == 'Online' ? Colors.green : Colors.red,
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Last Updated: $formattedTimestamp',
-                style: const TextStyle(fontSize: 12),
-              ),
-              const Divider(),
-              // Display other device data without the '-unit' keys
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: deviceDataMap.entries.where((entry) {
-                  return entry.key != 'status' && !entry.key.endsWith('-unit');
-                }).map((entry) {
-                  final unitKey = '${entry.key}-unit';
-                  final unit = deviceDataMap.containsKey(unitKey) ? deviceDataMap[unitKey] : '';
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Last Updated: ${formattedTimestamp.toString()}',
+              style: const TextStyle(fontSize: 12),
+            ),
+            const Divider(),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: deviceDataMap.entries.map((entry) {
+                if (entry.key == 'status') return Container(); // Skip status
+                if (entry.key.endsWith('-unit')) return Container(); // Skip unit keys directly
 
-                  return Text(
-                    '${entry.key}: ${entry.value} ${unit.toString()}',
-                    style: const TextStyle(fontSize: 12),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
+                final unitKey = '${entry.key}-unit';
+                final unit = deviceDataMap.containsKey(unitKey) ? deviceDataMap[unitKey] : '';
+
+                return Text(
+                  '${entry.key}: ${entry.value} $unit',
+                  style: const TextStyle(fontSize: 12),
+                );
+              }).toList(),
+            ),
+          ],
         ),
       ),
     );
