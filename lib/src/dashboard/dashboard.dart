@@ -224,11 +224,11 @@ Future<void> _fetchShadow(String deviceId) async {
               fit: BoxFit.cover,
             ),
           ),
-          Column(
+            Column(
             children: [
               const SizedBox(height: 16),
               GestureDetector(
-                onHorizontalDragUpdate: _onDragUpdate,
+                onHorizontalDragUpdate: _onDragUpdate, // Restore the onDragUpdate function
                 child: SizedBox(
                   height: 150,
                   child: ListView.builder(
@@ -242,8 +242,7 @@ Future<void> _fetchShadow(String deviceId) async {
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                DeviceDetailScreen(device: devices[index]),
+                            builder: (context) => DeviceDetailScreen(device: devices[index]),
                           ),
                         ),
                         child: Padding(
@@ -257,9 +256,7 @@ Future<void> _fetchShadow(String deviceId) async {
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: devices.isEmpty
-                    ? MessageBoard(messages: messages)
-                    : MessageBoard(messages: messages),
+                child: MessageBoard(messages: messages),
               ),
             ],
           ),
@@ -281,7 +278,7 @@ class DeviceCard extends StatelessWidget {
 
     final formattedTimestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(
       DateTime.fromMillisecondsSinceEpoch(
-        device.timestamp.toSeconds(),
+        device.timestamp.toSeconds() * 1000,
       ).toLocal(),
     );
 
@@ -292,26 +289,25 @@ class DeviceCard extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min, // Ensures the card height fits content
           children: [
-            Center(
-              child: Column(
-                children: [
-                  Icon(
-                    status == 'Online' ? Icons.check_circle : Icons.error,
-                    color: status == 'Online' ? Colors.green : Colors.red,
-                    size: 36,
+            Column(
+              children: [
+                Icon(
+                  status == 'Online' ? Icons.check_circle : Icons.error,
+                  color: status == 'Online' ? Colors.green : Colors.red,
+                  size: 36,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Device ID: ${device.device_id}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Device ID: ${device.device_id}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             Text(
@@ -324,26 +320,22 @@ class DeviceCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Last Updated: $formattedTimestamp',
+              'Last Updated: ${formattedTimestamp.toString()}',
               style: const TextStyle(fontSize: 12),
             ),
             const Divider(),
-            // Display other device data
+            // Display other device data without the '-unit' keys
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: deviceDataMap.entries.map((entry) {
-                if (entry.key == 'status') return Container(); // Skip status
-                if (entry.key.endsWith('-unit')) return Container(); // Skip unit keys directly
-
+              children: deviceDataMap.entries.where((entry) {
+                return entry.key != 'status' && !entry.key.endsWith('-unit');
+              }).map((entry) {
                 final unitKey = '${entry.key}-unit';
                 final unit = deviceDataMap.containsKey(unitKey) ? deviceDataMap[unitKey] : '';
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 4.0),
-                  child: Text(
-                    '${entry.key}: ${entry.value} $unit',
-                    style: const TextStyle(fontSize: 12),
-                  ),
+                return Text(
+                  '${entry.key}: ${entry.value} ${unit.toString()}',
+                  style: const TextStyle(fontSize: 12),
                 );
               }).toList(),
             ),
@@ -353,10 +345,6 @@ class DeviceCard extends StatelessWidget {
     );
   }
 }
-
-
-
-
 
 class Message {
   final String content;
