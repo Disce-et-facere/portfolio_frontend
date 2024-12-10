@@ -113,7 +113,7 @@ class _DashboardState extends State<Dashboard> {
 Future<void> _fetchShadow(String deviceId) async {
   debugPrint('Fetching shadow data for device: $deviceId');
 
-  const fetchShadowQuery = '''
+  const queryDocument = '''
     query FetchDeviceShadow(\$deviceId: String!) {
       fetchDeviceShadow(deviceId: \$deviceId) {
         deviceId
@@ -124,16 +124,26 @@ Future<void> _fetchShadow(String deviceId) async {
   ''';
 
   try {
-    // Execute the GraphQL query
-    final shadowResponse = await Amplify.API.query<String>(
+    final response = await Amplify.API.query<String>(
       request: GraphQLRequest<String>(
-        document: fetchShadowQuery,
+        document: queryDocument,
         variables: {'deviceId': deviceId},
       ),
     ).response;
 
-    if (shadowResponse.data != null) {
-      final shadowData = jsonDecode(shadowResponse.data!)['fetchDeviceShadow'];
+    if (response.data != null) {
+      final shadowData = jsonDecode(response.data!) as Map<String, dynamic>;
+
+      debugPrint('Shadow Data for $deviceId: $shadowData');
+
+      final fetchedShadow = shadowData['fetchDeviceShadow'];
+      if (fetchedShadow == null) {
+        debugPrint('No shadow data returned for device: $deviceId');
+        return;
+      }
+
+      final status = fetchedShadow['status'] ?? 'Unknown';
+      final deviceData = fetchedShadow['deviceData'] ?? {};
 
       setState(() {
         devices = devices.map((device) {
@@ -141,7 +151,8 @@ Future<void> _fetchShadow(String deviceId) async {
             return device.copyWith(
               deviceData: jsonEncode({
                 ...(jsonDecode(device.deviceData) as Map<String, dynamic>),
-                'status': shadowData['status'] ?? 'Unknown',
+                'status': status,
+                ...deviceData,
               }),
             );
           }
@@ -149,7 +160,7 @@ Future<void> _fetchShadow(String deviceId) async {
         }).toList();
       });
     } else {
-      debugPrint('No shadow data for device: $deviceId');
+      debugPrint('No data received from shadow query for device: $deviceId');
     }
   } catch (e) {
     debugPrint('Error fetching shadow for $deviceId: $e');
@@ -196,7 +207,7 @@ Future<void> _fetchShadow(String deviceId) async {
       Message(content: 'Device 3 disconnected', type: MessageType.alert),
       Message(content: 'Firmware update available for Device 1', type: MessageType.warning),
     ];
-
+  
     return Scaffold(
       appBar: Toolbar(
         username: userEmail ?? 'Loading...',
@@ -268,7 +279,7 @@ class DeviceCard extends StatelessWidget {
     final status = deviceDataMap['status'] ?? 'Unknown';
 
     final formattedTimestamp = DateTime.fromMillisecondsSinceEpoch(
-      device.timestamp.toSeconds() * 1000,
+      device.timestamp.toSeconds(),
     ).toLocal();
 
     return Card(
@@ -323,7 +334,7 @@ class DeviceCard extends StatelessWidget {
                 final unit = deviceDataMap.containsKey(unitKey) ? deviceDataMap[unitKey] : '';
 
                 return Text(
-                  '${entry.key}: ${entry.value} $unit',
+                  '${entry.key}: ${entry.value} ${unit.toString()}',
                   style: const TextStyle(fontSize: 12),
                 );
               }).toList(),
@@ -334,6 +345,7 @@ class DeviceCard extends StatelessWidget {
     );
   }
 }
+
 
 
 class Message {
@@ -357,46 +369,49 @@ class MessageBoard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Card(
-      color: colorScheme.surface,
-      margin: const EdgeInsets.all(16),
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Message Board',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const Divider(),
-            Expanded(
-              child: messages.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'No messages to display.',
-                        style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
-                      ),
-                    )
-                  : ListView.builder(
-                      itemCount: messages.length,
-                      itemBuilder: (context, index) {
-                        final message = messages[index];
-                        final color = _getMessageColor(message.type);
-                        final icon = _getMessageIcon(message.type);
+    return Flexible(
+      flex: 1, // Adjust flex value as needed
+      child: Card(
+        color: colorScheme.surface,
+        margin: const EdgeInsets.all(16),
+        elevation: 4,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Message Board',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const Divider(),
+              Expanded(
+                child: messages.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No messages to display.',
+                          style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: messages.length,
+                        itemBuilder: (context, index) {
+                          final message = messages[index];
+                          final color = _getMessageColor(message.type);
+                          final icon = _getMessageIcon(message.type);
 
-                        return ListTile(
-                          leading: Icon(icon, color: color),
-                          title: Text(
-                            message.content,
-                            style: TextStyle(color: color),
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ],
+                          return ListTile(
+                            leading: Icon(icon, color: color),
+                            title: Text(
+                              message.content,
+                              style: TextStyle(color: color),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -428,4 +443,5 @@ class MessageBoard extends StatelessWidget {
     }
   }
 }
+
 
