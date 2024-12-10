@@ -18,6 +18,7 @@ dependencies:
   path_provider: ^2.0.12
   fl_chart: ^0.69.2
   http: ^1.2.2
+  intl: ^0.18.0
   flutter:
     sdk: flutter
   flutter_localizations:
