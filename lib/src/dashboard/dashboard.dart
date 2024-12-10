@@ -230,7 +230,7 @@ Future<void> _fetchShadow(String deviceId) async {
               GestureDetector(
                 onHorizontalDragUpdate: _onDragUpdate, // Restore the onDragUpdate function
                 child: SizedBox(
-                  height: 150,
+                  height: 500,
                   child: ListView.builder(
                     controller: _scrollController,
                     scrollDirection: Axis.horizontal,
