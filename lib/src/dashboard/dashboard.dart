@@ -114,47 +114,54 @@ class _DashboardState extends State<Dashboard> {
 Future<void> _fetchShadow(String deviceId) async {
   debugPrint('Fetching shadow data for device: $deviceId');
 
-  try {
-    final request = GraphQLRequest<String>(
-      document: '''
-      query FetchShadow(\$deviceId: String!) {
-        fetchDeviceShadow(deviceId: \$deviceId) {
-          deviceId
-          status
-        }
+  const queryDocument = '''
+    query FetchDeviceShadow(\$deviceId: String!) {
+      fetchDeviceShadow(deviceId: \$deviceId) {
+        deviceId
+        status
+        deviceData
       }
-      ''',
-      variables: {'deviceId': deviceId},
-    );
+    }
+  ''';
 
-    final response = await Amplify.API.query(request: request).response;
+  try {
+    final response = await Amplify.API.query<String>(
+      request: GraphQLRequest<String>(
+        document: queryDocument,
+        variables: {'deviceId': deviceId},
+      ),
+    ).response;
 
     if (response.data != null) {
-      final shadowData = jsonDecode(response.data!)['fetchDeviceShadow'];
+      final shadowData = jsonDecode(response.data!) as Map<String, dynamic>;
+
       debugPrint('Shadow Data for $deviceId: $shadowData');
+
+      final fetchedShadow = shadowData['fetchDeviceShadow'];
+      if (fetchedShadow == null) {
+        debugPrint('No shadow data returned for device: $deviceId');
+        return;
+      }
+
+      final status = fetchedShadow['status'] ?? 'Unknown';
+      final deviceData = fetchedShadow['deviceData'] ?? {};
 
       setState(() {
         devices = devices.map((device) {
           if (device.device_id == deviceId) {
-            // Parse the existing deviceData as a map
-            final deviceDataMap = jsonDecode(device.deviceData) as Map<String, dynamic>;
-
-            // Update the status within deviceData
-            final updatedDeviceData = {
-              ...deviceDataMap,
-              'status': shadowData['status'] ?? 'Unknown',
-            };
-
-            // Return the updated device
             return device.copyWith(
-              deviceData: jsonEncode(updatedDeviceData),
+              deviceData: jsonEncode({
+                ...(jsonDecode(device.deviceData) as Map<String, dynamic>),
+                'status': status,
+                ...deviceData,
+              }),
             );
           }
           return device;
         }).toList();
       });
     } else {
-      debugPrint('No shadow data returned for device: $deviceId');
+      debugPrint('No data received from shadow query for device: $deviceId');
     }
   } catch (e) {
     debugPrint('Error fetching shadow for $deviceId: $e');

@@ -22,6 +22,7 @@ export const schema = a.schema({
   FetchShadowResponse: a.customType({
     deviceId: a.string().required(),
     status: a.string(),
+    deviceData: a.json(),
   }),
 
   // Define the custom query
