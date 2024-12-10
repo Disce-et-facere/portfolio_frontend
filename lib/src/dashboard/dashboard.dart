@@ -285,66 +285,76 @@ class DeviceCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
-              children: [
-                Icon(
-                  status == 'Online' ? Icons.check_circle : Icons.error,
-                  color: status == 'Online' ? Colors.green : Colors.red,
-                  size: 36,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 200, maxWidth: 300),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Column(
+                  children: [
+                    Icon(
+                      status == 'Online' ? Icons.check_circle : Icons.error,
+                      color: status == 'Online' ? Colors.green : Colors.red,
+                      size: 36,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Device ID: ${device.device_id}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Device ID: ${device.device_id}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Status: $status',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: status == 'Online' ? Colors.green : Colors.red,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Last Updated: ${formattedTimestamp.toString()}',
-              style: const TextStyle(fontSize: 12),
-            ),
-            const Divider(),
-            // Display other device data
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: deviceDataMap.entries.map((entry) {
-                if (entry.key == 'status') return Container(); // Skip status
-                if (entry.key.endsWith('-unit')) return Container(); // Skip unit keys directly
+              const SizedBox(height: 8),
+              Text(
+                'Status: $status',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: status == 'Online' ? Colors.green : Colors.red,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Last Updated: ${formattedTimestamp.toString()}',
+                style: const TextStyle(fontSize: 12),
+              ),
+              const Divider(),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: deviceDataMap.entries.map((entry) {
+                      if (entry.key == 'status') return Container(); // Skip status
+                      if (entry.key.endsWith('-unit')) return Container(); // Skip unit keys directly
 
-                final unitKey = '${entry.key}-unit';
-                final unit = deviceDataMap.containsKey(unitKey) ? deviceDataMap[unitKey] : '';
+                      final unitKey = '${entry.key}-unit';
+                      final unit = deviceDataMap.containsKey(unitKey) ? deviceDataMap[unitKey] : '';
 
-                return Text(
-                  '${entry.key}: ${entry.value} ${unit.toString()}',
-                  style: const TextStyle(fontSize: 12),
-                );
-              }).toList(),
-            ),
-          ],
+                      return Text(
+                        '${entry.key}: ${entry.value} $unit',
+                        style: const TextStyle(fontSize: 12),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
 
 
 
