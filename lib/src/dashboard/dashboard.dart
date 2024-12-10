@@ -224,17 +224,16 @@ Future<void> _fetchShadow(String deviceId) async {
               fit: BoxFit.cover,
             ),
           ),
-            Column(
+              Column(
             children: [
               const SizedBox(height: 16),
-              GestureDetector(
-                onHorizontalDragUpdate: _onDragUpdate, // Restore the onDragUpdate function
-                child: SizedBox(
-                  height: 500,
+              Expanded(
+                flex: 2, // Allocate space for DeviceCards
+                child: GestureDetector(
+                  onHorizontalDragUpdate: _onDragUpdate,
                   child: ListView.builder(
                     controller: _scrollController,
                     scrollDirection: Axis.horizontal,
-                    physics: const NeverScrollableScrollPhysics(),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: devices.length,
                     itemBuilder: (context, index) {
@@ -256,6 +255,7 @@ Future<void> _fetchShadow(String deviceId) async {
               ),
               const SizedBox(height: 16),
               Expanded(
+                flex: 1, // Allocate less space for the MessageBoard
                 child: MessageBoard(messages: messages),
               ),
             ],
@@ -287,59 +287,61 @@ class DeviceCard extends StatelessWidget {
       elevation: 4,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min, // Ensures the card height fits content
-          children: [
-            Column(
-              children: [
-                Icon(
-                  status == 'Online' ? Icons.check_circle : Icons.error,
-                  color: status == 'Online' ? Colors.green : Colors.red,
-                  size: 36,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Device ID: ${device.device_id}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+        child: IntrinsicHeight(
+          // Ensures the card height fits its content
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Column(
+                children: [
+                  Icon(
+                    status == 'Online' ? Icons.check_circle : Icons.error,
+                    color: status == 'Online' ? Colors.green : Colors.red,
+                    size: 36,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Status: $status',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: status == 'Online' ? Colors.green : Colors.red,
+                  const SizedBox(height: 8),
+                  Text(
+                    'Device ID: ${device.device_id}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Last Updated: ${formattedTimestamp.toString()}',
-              style: const TextStyle(fontSize: 12),
-            ),
-            const Divider(),
-            // Display other device data without the '-unit' keys
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: deviceDataMap.entries.where((entry) {
-                return entry.key != 'status' && !entry.key.endsWith('-unit');
-              }).map((entry) {
-                final unitKey = '${entry.key}-unit';
-                final unit = deviceDataMap.containsKey(unitKey) ? deviceDataMap[unitKey] : '';
+              const SizedBox(height: 8),
+              Text(
+                'Status: $status',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: status == 'Online' ? Colors.green : Colors.red,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Last Updated: $formattedTimestamp',
+                style: const TextStyle(fontSize: 12),
+              ),
+              const Divider(),
+              // Display other device data without the '-unit' keys
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: deviceDataMap.entries.where((entry) {
+                  return entry.key != 'status' && !entry.key.endsWith('-unit');
+                }).map((entry) {
+                  final unitKey = '${entry.key}-unit';
+                  final unit = deviceDataMap.containsKey(unitKey) ? deviceDataMap[unitKey] : '';
 
-                return Text(
-                  '${entry.key}: ${entry.value} ${unit.toString()}',
-                  style: const TextStyle(fontSize: 12),
-                );
-              }).toList(),
-            ),
-          ],
+                  return Text(
+                    '${entry.key}: ${entry.value} ${unit.toString()}',
+                    style: const TextStyle(fontSize: 12),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
         ),
       ),
     );
