@@ -1,12 +1,12 @@
-import { APIGatewayProxyEvent } from 'aws-lambda';
+import { AppSyncResolverEvent } from 'aws-lambda';
 import AWS from 'aws-sdk';
 
 const iotData = new AWS.IotData({ endpoint: process.env.IOT_CORE_ENDPOINT });
 
-export const handler = async (event: APIGatewayProxyEvent) => {
+export const handler = async (event: AppSyncResolverEvent<{ deviceId: string }>) => {
   console.log('Event:', JSON.stringify(event, null, 2));
 
-  const { deviceId } = JSON.parse(event.body || '{}');
+  const { deviceId } = event.arguments;
 
   if (!deviceId) {
     throw new Error('Device ID is required');
