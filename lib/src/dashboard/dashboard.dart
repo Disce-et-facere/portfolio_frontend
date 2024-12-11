@@ -82,41 +82,49 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
- Future<void> _fetchDevices() async {
+Future<void> _fetchDevices() async {
   debugPrint('Starting _fetchDevices...');
   debugPrint('OwnerID passed to _fetchDevices: $ownerId');
   try {
-    final String graphQLQuery = '''
-      query ListDevicesByOwnerID(\$ownerID: String!, \$limit: Int, \$sortDirection: ModelSortDirection) {
-        listDevicesByOwnerID(ownerID: \$ownerID, limit: \$limit, sortDirection: \$sortDirection) {
+    final query = '''
+      query ListDevicesByOwnerID(
+        \$ownerID: String!
+        \$sortDirection: ModelSortDirection
+        \$limit: Int
+      ) {
+        listDevicesByOwnerID(
+          ownerID: \$ownerID
+          sortDirection: \$sortDirection
+          limit: \$limit
+        ) {
           items {
             device_id
             timestamp
-            ownerID
             deviceData
           }
         }
       }
     ''';
 
-    final response = await Amplify.API.query(
+    final response = await Amplify.API.query<String>(
       request: GraphQLRequest<String>(
-        document: graphQLQuery,
+        document: query,
         variables: {
           'ownerID': ownerId,
-          'limit': 50,
-          'sortDirection': 'DESC',
+          'sortDirection': 'DESC', // Fetch latest items first
+          'limit': 50, // Adjust limit based on your requirements
         },
       ),
     ).response;
 
     if (response.data != null) {
-      final decodedData = jsonDecode(response.data!)['listDevicesByOwnerID']['items'];
-      debugPrint('Fetched devices: $decodedData');
+      final responseData = jsonDecode(response.data!)['listDevicesByOwnerID']['items'];
+      debugPrint('Response data from _fetchDevices: $responseData');
 
       final groupedDevices = <String, telemetry>{};
-      for (var device in decodedData) {
-        groupedDevices[device['device_id']] = telemetry.fromJson(device);
+      for (var deviceData in responseData) {
+        final device = telemetry.fromJson(deviceData);
+        groupedDevices[device.device_id] = device;
       }
 
       setState(() {
@@ -137,6 +145,7 @@ class _DashboardState extends State<Dashboard> {
     debugPrint('Error fetching devices: $e');
   }
 }
+
 
 Future<void> _fetchShadow(String deviceId) async {
   debugPrint('Fetching shadow status for device: $deviceId');
