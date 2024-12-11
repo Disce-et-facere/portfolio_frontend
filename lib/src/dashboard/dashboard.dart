@@ -245,7 +245,7 @@ Future<void> _fetchShadow(String deviceId) async {
             children: [
               const SizedBox(height: 16),
               Expanded(
-                flex: 2, // Allocate space for DeviceCards
+                flex: 1, // Allocate space for DeviceCards
                 child: GestureDetector(
                   onHorizontalDragUpdate: _onDragUpdate,
                   child: ListView.builder(
