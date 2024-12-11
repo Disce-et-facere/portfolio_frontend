@@ -86,9 +86,9 @@ class _DashboardState extends State<Dashboard> {
   debugPrint('Starting _fetchDevices...');
   debugPrint('OwnerID passed to _fetchDevices: $ownerId');
   try {
-    const String query = '''
-      query ListTelemetry(\$ownerID: String!) {
-        listDevicesByOwnerID(ownerID: \$ownerID) {
+    final String graphQLQuery = '''
+      query ListDevicesByOwnerID(\$ownerID: String!, \$limit: Int, \$sortDirection: ModelSortDirection) {
+        listDevicesByOwnerID(ownerID: \$ownerID, limit: \$limit, sortDirection: \$sortDirection) {
           items {
             device_id
             timestamp
@@ -99,28 +99,24 @@ class _DashboardState extends State<Dashboard> {
       }
     ''';
 
-    final response = await Amplify.API.query<String>(
+    final response = await Amplify.API.query(
       request: GraphQLRequest<String>(
-        document: query,
+        document: graphQLQuery,
         variables: {
           'ownerID': ownerId,
+          'limit': 50,
+          'sortDirection': 'DESC',
         },
       ),
     ).response;
 
     if (response.data != null) {
-      debugPrint('Response data from _fetchDevices: ${response.data}');
+      final decodedData = jsonDecode(response.data!)['listDevicesByOwnerID']['items'];
+      debugPrint('Fetched devices: $decodedData');
 
-      // Parse the response JSON
-      final responseData = jsonDecode(response.data!);
-      final List<dynamic> devicesList =
-          responseData['listDevicesByOwnerID']['items'] ?? [];
-
-      // Convert to telemetry models
       final groupedDevices = <String, telemetry>{};
-      for (final device in devicesList) {
-        final telemetryDevice = telemetry.fromJson(device);
-        groupedDevices[telemetryDevice.device_id] = telemetryDevice;
+      for (var device in decodedData) {
+        groupedDevices[device['device_id']] = telemetry.fromJson(device);
       }
 
       setState(() {
