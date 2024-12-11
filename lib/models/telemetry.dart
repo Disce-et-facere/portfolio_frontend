@@ -139,7 +139,7 @@ class telemetry extends amplify_core.Model {
     
     buffer.write("telemetry {");
     buffer.write("device_id=" + "$_device_id" + ", ");
-    buffer.write("timestamp=" + (_timestamp != null ? _timestamp!.toString() : "null") + ", ");
+    buffer.write("timestamp=" + (_timestamp != null ? _timestamp.toString() : "null") + ", ");
     buffer.write("ownerID=" + "$_ownerID" + ", ");
     buffer.write("deviceData=" + "$_deviceData");
     buffer.write("}");
