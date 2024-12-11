@@ -83,6 +83,8 @@ class _DashboardState extends State<Dashboard> {
   }
 
  Future<void> _fetchDevices() async {
+  debugPrint('Starting _fetchDevices...');
+  debugPrint('OwnerID passed to _fetchDevices: $ownerId');
   try {
     final request = ModelQueries.list(
       telemetry.classType,
@@ -92,6 +94,7 @@ class _DashboardState extends State<Dashboard> {
     final response = await Amplify.API.query(request: request).response;
 
     if (response.data != null) {
+      debugPrint('Response data from _fetchDevices: ${response.data}');
       final groupedDevices = <String, telemetry>{};
       for (var device in response.data!.items.whereType<telemetry>()) {
         groupedDevices[device.device_id] = device;
@@ -99,6 +102,7 @@ class _DashboardState extends State<Dashboard> {
 
       setState(() {
         devices = groupedDevices.values.toList();
+        debugPrint('Devices list updated in state: $devices');
       });
 
       // Fetch shadow data only for devices without a known status
