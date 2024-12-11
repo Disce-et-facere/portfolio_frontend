@@ -234,7 +234,7 @@ Future<void> _fetchShadow(String deviceId) async {
                           context,
                           MaterialPageRoute(
                             builder: (context) => DeviceDetailScreen(
-                              device: device,
+                              deviceId: device.device_id,
                             ),
                           ),
                         ),
@@ -252,7 +252,7 @@ Future<void> _fetchShadow(String deviceId) async {
               ),
               const SizedBox(height: 16),
               Expanded(
-                flex: 1, // Allocate less space for the MessageBoard
+                flex: 2, // Allocate less space for the MessageBoard
                 child: MessageBoard(messages: messages),
               ),
             ],

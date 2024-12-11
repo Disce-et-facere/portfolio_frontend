@@ -1,116 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart'; // For graphing
+import 'package:amplify_api/amplify_api.dart';
+import 'package:intl/intl.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../../models/telemetry.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
-import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
+import '../../models/telemetry.dart';
 
 class DeviceDetailScreen extends StatefulWidget {
-  final telemetry device; // Update to use telemetry
+  final String deviceId;
 
-  const DeviceDetailScreen({super.key, required this.device});
+  const DeviceDetailScreen({super.key, required this.deviceId});
 
   @override
   State<DeviceDetailScreen> createState() => _DeviceDetailScreenState();
 }
 
 class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
-  late Future<Map<String, GraphData>> _deviceDataFuture;
+  late Future<List<telemetry>> _deviceDataFuture;
 
   @override
   void initState() {
     super.initState();
-    _deviceDataFuture = _prepareData();
+    _deviceDataFuture = _fetchDeviceData(widget.deviceId);
   }
 
-  Future<Map<String, GraphData>> _prepareData() async {
-    final String ownerId = await _getOwnerId();
-    return _fetchDeviceData(widget.device.device_id, ownerId);
-  }
-
-  Future<String> _getAccessToken() async {
+  Future<List<telemetry>> _fetchDeviceData(String deviceId) async {
     try {
-      final cognitoPlugin = Amplify.Auth.getPlugin(AmplifyAuthCognito.pluginKey);
-      final cognitoSession = await cognitoPlugin.fetchAuthSession();
-      final tokens = cognitoSession.userPoolTokensResult.value;
-      return tokens.accessToken.raw;
-    } catch (e) {
-      debugPrint('Error fetching access token: $e');
-      throw Exception('Failed to fetch access token.');
-    }
-  }
-
-  Future<String> _getOwnerId() async {
-    try {
-      final attributes = await Amplify.Auth.fetchUserAttributes();
-      final ownerAttr = attributes.firstWhere(
-        (attr) => attr.userAttributeKey == CognitoUserAttributeKey.custom('OwnerID'),
-        orElse: () => AuthUserAttribute(
-          userAttributeKey: CognitoUserAttributeKey.custom('OwnerID'),
-          value: '',
-        ),
-      );
-      if (ownerAttr.value.isEmpty) {
-        throw Exception('OwnerID is not set in Cognito user attributes.');
-      }
-      return ownerAttr.value;
-    } catch (e) {
-      debugPrint('Error fetching OwnerID: $e');
-      throw Exception('Failed to fetch OwnerID.');
-    }
-  }
-
-  Future<Map<String, GraphData>> _fetchDeviceData(String deviceId, String ownerId) async {
-    const apiUrl = 'https://6zqrep9in8.execute-api.eu-central-1.amazonaws.com';
-    final String accessToken = await _getAccessToken();
-
-    try {
-      final urlWithParams = Uri.parse('$apiUrl?deviceId=$deviceId&ownerID=$ownerId');
-      final response = await http.get(
-        urlWithParams,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $accessToken',
-        },
+      final request = ModelQueries.list(
+        telemetry.classType,
+        where: telemetry.DEVICE_ID.eq(deviceId),
       );
 
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        final List<dynamic> data = responseData['data'];
+      final response = await Amplify.API.query(request: request).response;
 
-        // Group data by measurement type
-        final Map<String, List<DataPoint>> groupedData = {};
-
-        for (var item in data) {
-          final timestamp = item['timestamp'];
-          final measurements = Map<String, dynamic>.from(item['data']);
-
-          measurements.forEach((key, value) {
-            if (!key.endsWith('-Unit')) {
-              groupedData.putIfAbsent(key, () => []);
-              groupedData[key]!.add(DataPoint(
-                timestamp: DateTime.fromMillisecondsSinceEpoch(timestamp * 1000),
-                value: value,
-              ));
-            }
-          });
-        }
-
-        return groupedData.map((key, points) {
-          final unit = data.firstWhere((item) => item['data'].containsKey('$key-Unit'),
-              orElse: () => {})['data']['$key-Unit'] ?? '';
-          return MapEntry(
-            key,
-            GraphData(
-              measurementType: key,
-              unit: unit,
-              points: points,
-            ),
-          );
-        });
+      if (response.data != null) {
+        return response.data!.items.whereType<telemetry>().toList();
       } else {
-        throw Exception('Failed to fetch device data. Status: ${response.statusCode}');
+        throw Exception('Failed to fetch data for deviceId: $deviceId');
       }
     } catch (e) {
       debugPrint('Error fetching device data: $e');
@@ -122,9 +48,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Device Details: ${widget.device.device_id}'), // Updated to use device_id
+        title: Text('Device Details: ${widget.deviceId}'),
       ),
-      body: FutureBuilder<Map<String, GraphData>>(
+      body: FutureBuilder<List<telemetry>>(
         future: _deviceDataFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -135,13 +61,46 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
             return const Center(child: Text('No data available for this device.'));
           }
 
-          final Map<String, GraphData> graphData = snapshot.data!;
+          final List<telemetry> telemetryData = snapshot.data!;
+
+          // Group data by measurement type for the graph
+          final Map<String, List<DataPoint>> groupedData = {};
+
+          for (final item in telemetryData) {
+            final timestamp = item.timestamp.toSeconds();
+            final measurements = jsonDecode(item.deviceData) as Map<String, dynamic>;
+
+            measurements.forEach((key, value) {
+              if (!key.endsWith('-Unit')) {
+                groupedData.putIfAbsent(key, () => []);
+                groupedData[key]!.add(DataPoint(
+                  timestamp: DateTime.fromMillisecondsSinceEpoch(timestamp * 1000),
+                  value: value.toDouble(),
+                ));
+              }
+            });
+          }
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: graphData.length,
+            itemCount: groupedData.keys.length,
             itemBuilder: (context, index) {
-              final data = graphData.values.toList()[index];
+              final measurementType = groupedData.keys.elementAt(index);
+              final unit = telemetryData.firstWhere(
+                    (item) =>
+                        (jsonDecode(item.deviceData) as Map<String, dynamic>)
+                            .containsKey('$measurementType-Unit'),
+                    orElse: () => telemetry(
+                      device_id: '',
+                      timestamp: telemetryData.first.timestamp,
+                      ownerID: '',
+                      deviceData: '{}',
+                    ),
+                  )
+                  .deviceData;
+              final unitValue = jsonDecode(unit)['$measurementType-Unit'] ?? '';
+
+              final points = groupedData[measurementType]!;
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 16),
@@ -151,7 +110,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${data.measurementType} (${data.unit})',
+                        '$measurementType ($unitValue)',
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 16),
@@ -164,10 +123,10 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                               bottomTitles: AxisTitles(
                                 sideTitles: SideTitles(
                                   showTitles: true,
-                                  interval: 1,
+                                  interval: points.length > 6 ? (points.length ~/ 6).toDouble() : 1,
                                   getTitlesWidget: (value, meta) {
-                                    final timestamp = data.points[value.toInt()].timestamp;
-                                    return Text('${timestamp.month}/${timestamp.day}');
+                                    final timestamp = points[value.toInt()].timestamp;
+                                    return Text(DateFormat('MM/dd').format(timestamp));
                                   },
                                 ),
                               ),
@@ -177,12 +136,12 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                             ),
                             lineBarsData: [
                               LineChartBarData(
-                                spots: data.points
+                                spots: points
                                     .asMap()
                                     .entries
                                     .map((entry) => FlSpot(
                                           entry.key.toDouble(),
-                                          entry.value.value.toDouble(),
+                                          entry.value.value,
                                         ))
                                     .toList(),
                                 isCurved: true,
@@ -204,18 +163,6 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
       ),
     );
   }
-}
-
-class GraphData {
-  final String measurementType;
-  final String unit;
-  final List<DataPoint> points;
-
-  GraphData({
-    required this.measurementType,
-    required this.unit,
-    required this.points,
-  });
 }
 
 class DataPoint {
