@@ -3,7 +3,7 @@ import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:amplify_api/amplify_api.dart'; // For ModelQueries
 import '../settings/settings_controller.dart';
 import 'dart:convert';
-//import 'package:intl/intl.dart';
+import 'package:intl/intl.dart';
 import '../widgets/toolbar.dart';
 import '../widgets/device_detail_screen.dart';
 import '../../models/telemetry.dart'; // Generated telemetry model
@@ -26,6 +26,7 @@ class _DashboardState extends State<Dashboard> {
   String ownerId = '';
   bool isLoading = true;
   List<telemetry> devices = [];
+  Map<String, String> deviceStatuses = {};
   late ScrollController _scrollController;
 
   @override
@@ -71,7 +72,10 @@ class _DashboardState extends State<Dashboard> {
         ownerId = ownerIDAttribute.value;
       });
       if (ownerId.isNotEmpty) {
-        await _fetchDevices();
+      debugPrint('OwnerID is not empty, calling _fetchDevices...');
+      await _fetchDevices();
+      } else {
+        debugPrint('OwnerID is empty, skipping _fetchDevices.');
       }
     } catch (e) {
       debugPrint('Error fetching OwnerID: $e');
@@ -88,9 +92,7 @@ class _DashboardState extends State<Dashboard> {
     final response = await Amplify.API.query(request: request).response;
 
     if (response.data != null) {
-      // Group by device_id
       final groupedDevices = <String, telemetry>{};
-
       for (var device in response.data!.items.whereType<telemetry>()) {
         groupedDevices[device.device_id] = device;
       }
@@ -99,9 +101,11 @@ class _DashboardState extends State<Dashboard> {
         devices = groupedDevices.values.toList();
       });
 
-      // Fetch shadow data for each device
+      // Fetch shadow data only for devices without a known status
       for (final device in devices) {
-        await _fetchShadow(device.device_id);
+        if (!deviceStatuses.containsKey(device.device_id)) {
+          await _fetchShadow(device.device_id);
+        }
       }
     } else {
       debugPrint('No devices found.');
@@ -110,8 +114,6 @@ class _DashboardState extends State<Dashboard> {
     debugPrint('Error fetching devices: $e');
   }
 }
-
-Map<String, String> deviceStatuses = {}; // Map to hold the device statuses
 
 Future<void> _fetchShadow(String deviceId) async {
   debugPrint('Fetching shadow status for device: $deviceId');
@@ -136,11 +138,9 @@ Future<void> _fetchShadow(String deviceId) async {
 
       if (shadowData != null) {
         final status = shadowData['status'] ?? 'Unknown';
-
         setState(() {
-          deviceStatuses[deviceId] = status; // Update the status in the map
+          deviceStatuses[deviceId] = status; // Update device status
         });
-
         debugPrint('Updated status for device $deviceId: $status');
       } else {
         debugPrint('Shadow status for $deviceId is null.');
@@ -209,7 +209,7 @@ Future<void> _fetchShadow(String deviceId) async {
               fit: BoxFit.cover,
             ),
           ),
-              Column(
+          Column(
             children: [
               const SizedBox(height: 16),
               Expanded(
@@ -222,16 +222,24 @@ Future<void> _fetchShadow(String deviceId) async {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: devices.length,
                     itemBuilder: (context, index) {
+                      final device = devices[index];
+                      final status = deviceStatuses[device.device_id];
+
                       return GestureDetector(
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => DeviceDetailScreen(device: devices[index]),
+                            builder: (context) => DeviceDetailScreen(
+                              device: device,
+                            ),
                           ),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: DeviceCard(device: devices[index]),
+                          child: DeviceCard(
+                            device: device,
+                            status: status,
+                          ),
                         ),
                       );
                     },
@@ -253,7 +261,7 @@ Future<void> _fetchShadow(String deviceId) async {
 
 class DeviceCard extends StatelessWidget {
   final telemetry device;
-  final String? status; // Accept status dynamically
+  final String? status;
 
   const DeviceCard({
     super.key,
@@ -266,9 +274,11 @@ class DeviceCard extends StatelessWidget {
     final deviceDataMap = jsonDecode(device.deviceData) as Map<String, dynamic>;
     final currentStatus = status ?? 'Unknown';
 
-    final formattedTimestamp = DateTime.fromMillisecondsSinceEpoch(
-      device.timestamp.toSeconds(),
-    ).toLocal();
+    final formattedTimestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(
+      DateTime.fromMillisecondsSinceEpoch(
+      device.timestamp.toSeconds() * 1000,
+      ).toLocal(),
+    );
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -278,23 +288,25 @@ class DeviceCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Column(
-              children: [
-                Icon(
-                  currentStatus == 'Online' ? Icons.check_circle : Icons.error,
-                  color: currentStatus == 'Online' ? Colors.green : Colors.red,
-                  size: 36,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Device ID: ${device.device_id}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+            Center(
+              child: Column(
+                children: [
+                  Icon(
+                    currentStatus == 'Online' ? Icons.check_circle : Icons.error,
+                    color: currentStatus == 'Online' ? Colors.green : Colors.red,
+                    size: 36,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    'Device ID: ${device.device_id}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -314,11 +326,11 @@ class DeviceCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: deviceDataMap.entries.map((entry) {
-                if (entry.key == 'status') return Container(); // Skip status
-                if (entry.key.endsWith('-unit')) return Container(); // Skip unit keys directly
+                if (entry.key == 'status') return Container();
+                if (entry.key.endsWith('-unit')) return Container();
 
                 final unitKey = '${entry.key}-unit';
-                final unit = deviceDataMap.containsKey(unitKey) ? deviceDataMap[unitKey] : '';
+                final unit = deviceDataMap[unitKey] ?? '';
 
                 return Text(
                   '${entry.key}: ${entry.value} $unit',
