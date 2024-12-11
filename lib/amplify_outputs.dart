@@ -1,9 +1,9 @@
 const amplifyConfig = r'''{
   "auth": {
-    "user_pool_id": "eu-central-1_VwwkOoyQA",
+    "user_pool_id": "eu-central-1_TWpxL4IpN",
     "aws_region": "eu-central-1",
-    "user_pool_client_id": "3anbc7ocnkah5pjsrhfpa3mjur",
-    "identity_pool_id": "eu-central-1:8aeabdd7-20f4-495a-ac39-221f0074224f",
+    "user_pool_client_id": "23dijkdufcap0mpfq7b8uf1ito",
+    "identity_pool_id": "eu-central-1:816df2a0-b970-476b-882e-bf73e77be32c",
     "mfa_methods": [],
     "standard_required_attributes": [
       "email"
@@ -25,7 +25,7 @@ const amplifyConfig = r'''{
     "unauthenticated_identities_enabled": true
   },
   "data": {
-    "url": "https://smgspdcmfzdatlxjgtobdpgqh4.appsync-api.eu-central-1.amazonaws.com/graphql",
+    "url": "https://hsd44tek75dvne3sdfrpj3yejq.appsync-api.eu-central-1.amazonaws.com/graphql",
     "aws_region": "eu-central-1",
     "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
     "authorization_types": [
@@ -68,18 +68,16 @@ const amplifyConfig = r'''{
             "createdAt": {
               "name": "createdAt",
               "isArray": false,
-              "type": "AWSDateTime",
-              "isRequired": false,
-              "attributes": [],
-              "isReadOnly": true
+              "type": "AWSTimestamp",
+              "isRequired": true,
+              "attributes": []
             },
             "updatedAt": {
               "name": "updatedAt",
               "isArray": false,
-              "type": "AWSDateTime",
-              "isRequired": false,
-              "attributes": [],
-              "isReadOnly": true
+              "type": "AWSTimestamp",
+              "isRequired": true,
+              "attributes": []
             }
           },
           "syncable": true,
@@ -137,7 +135,52 @@ const amplifyConfig = r'''{
         }
       },
       "enums": {},
-      "nonModels": {}
+      "nonModels": {
+        "FetchShadowResponse": {
+          "name": "FetchShadowResponse",
+          "fields": {
+            "deviceId": {
+              "name": "deviceId",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "status": {
+              "name": "status",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "deviceData": {
+              "name": "deviceData",
+              "isArray": false,
+              "type": "AWSJSON",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        }
+      },
+      "queries": {
+        "fetchDeviceShadow": {
+          "name": "fetchDeviceShadow",
+          "isArray": false,
+          "type": {
+            "nonModel": "FetchShadowResponse"
+          },
+          "isRequired": false,
+          "arguments": {
+            "deviceId": {
+              "name": "deviceId",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            }
+          }
+        }
+      }
     }
   },
   "version": "1.1"
