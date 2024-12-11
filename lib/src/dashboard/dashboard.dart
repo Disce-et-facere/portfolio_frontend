@@ -276,11 +276,25 @@ class DeviceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final deviceDataMap = jsonDecode(device.deviceData) as Map<String, dynamic>;
-    final currentStatus = status ?? 'Unknown';
 
+    // Map `status` to a display-friendly format
+    final currentStatus = (status == 'connected')
+        ? 'Online'
+        : (status == 'disconnected')
+            ? 'Offline'
+            : 'Unknown';
+
+    // Determine the icon and color based on status
+    final iconData = (currentStatus == 'Online')
+        ? Icons.check_circle
+        : Icons.error;
+    final iconColor = (currentStatus == 'Online') ? Colors.green : Colors.red;
+    final textColor = (currentStatus == 'Online') ? Colors.green : Colors.red;
+
+    // Format the timestamp
     final formattedTimestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(
       DateTime.fromMillisecondsSinceEpoch(
-      device.timestamp.toSeconds() * 1000,
+        device.timestamp.toSeconds() * 1000,
       ).toLocal(),
     );
 
@@ -296,8 +310,8 @@ class DeviceCard extends StatelessWidget {
               child: Column(
                 children: [
                   Icon(
-                    currentStatus == 'Online' ? Icons.check_circle : Icons.error,
-                    color: currentStatus == 'Online' ? Colors.green : Colors.red,
+                    iconData,
+                    color: iconColor,
                     size: 36,
                   ),
                   const SizedBox(height: 8),
@@ -318,22 +332,22 @@ class DeviceCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: currentStatus == 'Online' ? Colors.green : Colors.red,
+                color: textColor,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Last Updated: ${formattedTimestamp.toString()}',
+              'Last Updated: $formattedTimestamp',
               style: const TextStyle(fontSize: 12),
             ),
             const Divider(),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: deviceDataMap.entries.map((entry) {
-                if (entry.key == 'status') return Container();
-                if (entry.key.endsWith('-unit')) return Container();
+                if (entry.key == 'status') return Container(); // Skip status
+                if (entry.key.endsWith('-Unit')) return Container();
 
-                final unitKey = '${entry.key}-unit';
+                final unitKey = '${entry.key}-Unit';
                 final unit = deviceDataMap[unitKey] ?? '';
 
                 return Text(
@@ -348,7 +362,6 @@ class DeviceCard extends StatelessWidget {
     );
   }
 }
-
 class Message {
   final String content;
   final MessageType type;
