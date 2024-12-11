@@ -1,5 +1,5 @@
 import { type ClientSchema, a, defineData, defineFunction } from '@aws-amplify/backend';
-import {fetchDeviceShadow} from '../lambdas/fetchDeviceShadow/resource';
+import { fetchDeviceShadow } from '../lambdas/fetchDeviceShadow/resource';
 
 export const schema = a.schema({
   telemetry: a
@@ -8,6 +8,8 @@ export const schema = a.schema({
       timestamp: a.timestamp().required(),
       ownerID: a.string().required(),
       deviceData: a.json().required(),
+      createdAt: a.string().required(), // Use string for AWSDateTime
+      updatedAt: a.string().required(), // Use string for AWSDateTime
     })
     .identifier(['device_id', 'timestamp']) // Composite primary key
     .secondaryIndexes((index) => [
