@@ -86,6 +86,6 @@ This project is a **scalable and lightweight IoT dashboard** designed for custom
 
 ## 📝 Final Thoughts
 
-**"For the love of all that is sacred, avoid using the Flutter-Amplify combination until the developers have implemented all features and ensured the documentation is up to date. This will save you countless hours (or even days) of troubleshooting, frustration, and confusion.
+For the love of all that is sacred, avoid using the Flutter-Amplify combination until the developers have implemented all features and ensured the documentation is up to date. This will save you countless hours (or even days) of troubleshooting, frustration, and confusion.
 
-I'll give this combo a 2 out of 5 🍞—only because it’s been informative!"**
+I'll give this combo a 2 out of 5 🍞—only because it’s been informative!
