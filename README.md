@@ -14,6 +14,8 @@ This project is a **scalable and lightweight IoT dashboard** designed for custom
 
 ## 🛠️ Technologies Used
 
+![service-diagram](https://github.com/user-attachments/assets/9464c142-bfda-44bd-bb34-2b9e51457514)
+
 ### AWS Services:
 - **Amplify**: Simplifies the development workflow for seamless frontend and AppSync backend integration.
 - **AppSync**: Provides GraphQL APIs for secure and scalable communication between the frontend and backend.
