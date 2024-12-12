@@ -33,13 +33,15 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
     try {
       final request = GraphQLRequest<String>(
         document: '''
-          query ListDevicesByOwnerID(
+          query ListTelemetryByOwnerAndDevice(
             \$ownerID: String!
+            \$device_id: String!
             \$sortDirection: ModelSortDirection
             \$limit: Int
           ) {
-            listDevicesByOwnerID(
+            listTelemetryByOwnerAndDevice(
               ownerID: \$ownerID
+              device_id: \$device_id
               sortDirection: \$sortDirection
               limit: \$limit
             ) {
@@ -54,8 +56,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
         ''',
         variables: {
           'ownerID': ownerID,
-          'sortDirection': 'DESC',
-          'limit': 50,
+          'device_id': deviceId,
+          'sortDirection': 'DESC', // Fetch latest items first
+          'limit': 50, // Fetch only the latest 50 items
         },
       );
 
@@ -67,16 +70,13 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
       debugPrint('Errors: ${response.errors}');
 
       if (response.data != null) {
-        final responseData = jsonDecode(response.data!)['listDevicesByOwnerID']['items'];
+        final responseData = jsonDecode(response.data!)['listTelemetryByOwnerAndDevice']['items'];
         final telemetryItems = responseData.map<telemetry>((item) => telemetry.fromJson(item)).toList();
 
-        // Optional: Further filter by device_id if needed
-        final filteredTelemetry = telemetryItems.where((item) => item.device_id == deviceId).toList();
-
-        debugPrint('Filtered telemetry items: ${filteredTelemetry.length}');
-        return filteredTelemetry;
+        debugPrint('Fetched telemetry items: ${telemetryItems.length}');
+        return telemetryItems;
       } else {
-        debugPrint('No data returned for ownerID: $ownerID');
+        debugPrint('No data returned for ownerID: $ownerID and deviceId: $deviceId');
         return [];
       }
     } catch (e) {

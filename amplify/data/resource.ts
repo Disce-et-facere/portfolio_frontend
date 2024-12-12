@@ -13,10 +13,14 @@ export const schema = a.schema({
     })
     .identifier(['device_id', 'timestamp'])
     .secondaryIndexes((index) => [
-      index('ownerID')
-        .sortKeys(['timestamp']) 
+      index('ownerID') // Existing GSI for ownerID and timestamp
+        .sortKeys(['timestamp'])
         .name('OwnerIDIndex')
         .queryField('listDevicesByOwnerID'),
+      index('ownerID') // New GSI for ownerID and device_id
+        .sortKeys(['device_id'])
+        .name('OwnerIDDeviceIDIndex')
+        .queryField('listTelemetryByOwnerAndDevice'),
     ])
     .authorization((rules) => [rules.authenticated('userPools')]),
 
