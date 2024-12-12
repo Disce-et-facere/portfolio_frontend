@@ -69,7 +69,7 @@ This project is a **scalable and lightweight IoT dashboard** designed for custom
    - `IOT_CORE_ENDPOINT`: Found in the AWS IoT Core settings.
 
 4. **Setup Message Route Rule in IoT Core**:
-   Configure a rule in IoT Core with the following SQL:
+   Configure a rule in IoT Core with the following SQL and point it towards the dynamoDB table:
    ```sql
    SELECT *, 
    clientid() AS device_id, 
@@ -77,14 +77,15 @@ This project is a **scalable and lightweight IoT dashboard** designed for custom
    floor(timestamp() / 1000) AS createdAt, 
    floor(timestamp() / 1000) AS updatedAt FROM '+/telemetry'
    ```
-5. **adjust policy arns - due to lack of time and presevence of sanity**
+5. **Adjust policy ARNs due to time constraints and the need to maintain sanity.**
    Some arn need to be adjusted after your aws account arn in project file: amplify/backend.ts 
    Ex. "Resource: 'arn:aws:iot:{your-region}:{account-id}:client/${iot:ClientId}',
 
 6. **Redeploy the App in Amplify**:
    After configuring the secrets and message route rule, redeploy the app in Amplify to apply changes.
 
-## Final thought
+## 📝 Final Thoughts
 
-**Flatter & Amplify Combo**:
-   I'll give this combo a good 2 out of 5 toasts🍞
+For the sake of all that is sacred, do not use the Flutter-Amplify combination until the developers have implemented **all** functions and ensured that the documentation are up to date. This will save you from countless hours/days of troubleshooting, frustration and confusion.
+
+I'll give this combo 2 out of 5 🍞 just because it has been informative!
