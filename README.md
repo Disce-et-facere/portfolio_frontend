@@ -86,5 +86,5 @@ This project is a **scalable and lightweight IoT dashboard** designed for custom
 
 ## Final thought
 
-**Flatter & Amplify Combo**
+**Flatter & Amplify Combo**:
    I'll give this combo a good 2 out of 5 toasts🍞
