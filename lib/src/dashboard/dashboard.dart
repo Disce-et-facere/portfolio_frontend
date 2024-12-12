@@ -279,7 +279,7 @@ Future<void> _fetchShadow(String deviceId) async {
               ),
               const SizedBox(height: 16),
               Expanded(
-                flex: 2, // Allocate less space for the MessageBoard
+                flex: 3, // Allocate space for the MessageBoard
                 child: MessageBoard(messages: messages),
               ),
             ],
