@@ -17,6 +17,7 @@ This project is a **scalable and lightweight IoT dashboard** designed for custom
 ![service-diagram](https://github.com/user-attachments/assets/9464c142-bfda-44bd-bb34-2b9e51457514)
 
 ### AWS Services:
+-**IoT Core**: Manages communication and data routing for connected IoT devices.
 - **Amplify**: Simplifies the development workflow for seamless frontend and AppSync backend integration.
 - **AppSync**: Provides GraphQL APIs for secure and scalable communication between the frontend and backend.
 - **DynamoDB**: NoSQL database for storing device data and user associations.
