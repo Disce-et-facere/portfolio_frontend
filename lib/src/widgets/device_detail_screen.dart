@@ -25,18 +25,26 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
   }
 
   Future<List<telemetry>> _fetchDeviceData(String deviceId) async {
-    debugPrint('Fetching telemetry for device: $deviceId');
+    debugPrint('Fetching telemetry for deviceId: $deviceId');
     try {
       final request = ModelQueries.list(
         telemetry.classType,
         where: telemetry.DEVICE_ID.eq(deviceId),
       );
 
+      debugPrint('Query: ${request.variables}');
+
       final response = await Amplify.API.query(request: request).response;
 
+      debugPrint('Response: ${response.data}');
+      debugPrint('Errors: ${response.errors}');
+
       if (response.data != null) {
-        return response.data!.items.whereType<telemetry>().toList();
+        final telemetryItems = response.data!.items.whereType<telemetry>().toList();
+        debugPrint('Filtered telemetry items: $telemetryItems');
+        return telemetryItems;
       } else {
+        debugPrint('No data returned for deviceId: $deviceId');
         throw Exception('Failed to fetch data for deviceId: $deviceId');
       }
     } catch (e) {
