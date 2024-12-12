@@ -7,6 +7,7 @@ This project is a **scalable and lightweight IoT dashboard** designed for custom
 ## 🚀 Features
 
 - **Device Management**: View and manage IoT devices.
+- **Device Addition and Deletion**: Easily add and remove devices as needed for dynamic management.
 - **Data Visualization**: Display device data such as temperature, humidity, and more in a clean, intuitive interface.
 - **Multi-Sensor Support**: Seamlessly manage devices equipped with multiple sensors, enabling comprehensive monitoring and data visualization.
 - **Authentication**: Secure login and device association using Cognito.
