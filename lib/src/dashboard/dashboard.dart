@@ -184,6 +184,49 @@ Future<void> _fetchShadow(String deviceId) async {
   }
 }
 
+Future<void> _deleteDevice(String deviceId, String ownerId) async {
+  try {
+    final request = GraphQLRequest<String>(
+      document: '''
+        mutation DeleteDevice(\$deviceId: String!, \$ownerId: String!) {
+          deleteDevice(deviceId: \$deviceId, ownerId: \$ownerId) {
+            message
+          }
+        }
+      ''',
+      variables: {
+        'deviceId': deviceId,
+        'ownerId': ownerId,
+      },
+    );
+
+    final response = await Amplify.API.mutate(request: request).response;
+
+    if (response.errors.isEmpty) {
+      final message = jsonDecode(response.data!)['deleteDevice']['message'];
+
+      // Check if the widget is still mounted before calling setState or showing a SnackBar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+
+        setState(() {
+          devices.removeWhere((device) => device.device_id == deviceId);
+        });
+      }
+    } else {
+      throw Exception(response.errors.first.message);
+    }
+  } catch (e) {
+    debugPrint('Error deleting device: $e');
+
+    // Check if the widget is still mounted before showing a SnackBar
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
+  }
+}
+
+
 
   Future<void> _signOut() async {
     try {
@@ -216,15 +259,16 @@ Future<void> _fetchShadow(String deviceId) async {
     );
   }
 
+  
   @override
   Widget build(BuildContext context) {
-    final messages = [
+    /*final messages = [
       Message(content: 'Low battery on Device 1', type: MessageType.warning),
       Message(content: 'Temperature too high on Device 2', type: MessageType.alert),
       Message(content: 'Device 3 disconnected', type: MessageType.alert),
       Message(content: 'Firmware update available for Device 1', type: MessageType.warning),
-    ];
-  
+    ];*/
+    
     return Scaffold(
       appBar: Toolbar(
         username: userEmail ?? 'Loading...',
@@ -256,32 +300,48 @@ Future<void> _fetchShadow(String deviceId) async {
                       final device = devices[index];
                       final status = deviceStatuses[device.device_id];
 
-                      return GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => DeviceDetailScreen(
-                              deviceId: device.device_id,
-                              ownerID: ownerId,
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: DeviceCard(
+                          device: device,
+                          status: status,
+                          onDelete: () async {
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Confirm Deletion'),
+                                content: const Text('Are you sure you want to delete this device?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, true),
+                                    child: const Text('Delete'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirmed == true) {
+                              await _deleteDevice(device.device_id, ownerId);
+                            }
+                          },
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DeviceDetailScreen(
+                                deviceId: device.device_id,
+                                ownerID: ownerId,
+                              ),
                             ),
-                          ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: DeviceCard(
-                            device: device,
-                            status: status,
                           ),
                         ),
                       );
                     },
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                flex: 3, // Allocate space for the MessageBoard
-                child: MessageBoard(messages: messages),
               ),
             ],
           ),
@@ -294,102 +354,111 @@ Future<void> _fetchShadow(String deviceId) async {
 class DeviceCard extends StatelessWidget {
   final telemetry device;
   final String? status;
+  final VoidCallback onDelete;
+  final VoidCallback onTap; // Added onTap callback for card navigation
 
   const DeviceCard({
     super.key,
     required this.device,
     this.status,
+    required this.onDelete,
+    required this.onTap, // Required onTap callback
   });
 
   @override
   Widget build(BuildContext context) {
     final deviceDataMap = jsonDecode(device.deviceData) as Map<String, dynamic>;
 
-    // Map `status` to a display-friendly format
     final currentStatus = (status == 'connected')
         ? 'Online'
         : (status == 'disconnected')
             ? 'Offline'
             : 'Unknown';
 
-    // Determine the icon and color based on status
-    final iconData = (currentStatus == 'Online')
-        ? Icons.check_circle
-        : Icons.error;
+    final iconData = (currentStatus == 'Online') ? Icons.check_circle : Icons.error;
     final iconColor = (currentStatus == 'Online') ? Colors.green : Colors.red;
     final textColor = (currentStatus == 'Online') ? Colors.green : Colors.red;
 
-    // Format the timestamp
     final formattedTimestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(
       DateTime.fromMillisecondsSinceEpoch(
         device.timestamp.toSeconds() * 1000,
       ).toLocal(),
     );
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Column(
+    return GestureDetector(
+      onTap: onTap, // Trigger the onTap callback
+      child: Card(
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        elevation: 4,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(
-                    iconData,
-                    color: iconColor,
-                    size: 36,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        iconData,
+                        color: iconColor,
+                        size: 36,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Device ID: ${device.device_id}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Status: $currentStatus',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Last Updated: $formattedTimestamp',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Device ID: ${device.device_id}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                    textAlign: TextAlign.center,
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: onDelete, // Trigger the onDelete callback
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Status: $currentStatus',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: textColor,
+              const Divider(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: deviceDataMap.entries.map((entry) {
+                  if (entry.key == 'status' || entry.key.endsWith('-unit')) return Container();
+
+                  final unitKey = '${entry.key}-unit';
+                  final unit = deviceDataMap[unitKey] ?? '';
+
+                  return Text(
+                    '${entry.key}: ${entry.value} $unit',
+                    style: const TextStyle(fontSize: 12),
+                  );
+                }).toList(),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Last Updated: $formattedTimestamp',
-              style: const TextStyle(fontSize: 12),
-            ),
-            const Divider(),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: deviceDataMap.entries.map((entry) {
-                if (entry.key == 'status') return Container(); // Skip status
-                if (entry.key.endsWith('-unit')) return Container();
-
-                final unitKey = '${entry.key}-unit';
-                final unit = deviceDataMap[unitKey] ?? '';
-
-                return Text(
-                  '${entry.key}: ${entry.value} $unit',
-                  style: const TextStyle(fontSize: 12),
-                );
-              }).toList(),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
+
 class Message {
   final String content;
   final MessageType type;

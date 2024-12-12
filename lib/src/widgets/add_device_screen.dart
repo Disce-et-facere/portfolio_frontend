@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'dart:html' as html; // Web-specific import
-import 'package:http/http.dart' as http;
+
 import 'package:amplify_flutter/amplify_flutter.dart';
-import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 
 class AddDeviceScreen extends StatefulWidget {
   const AddDeviceScreen({super.key});
@@ -27,8 +26,6 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
   String? certificatePem;
   String? privateKey;
   String? caCertificate;
-
-  final String apiUrl = 'https://i54j20zyi1.execute-api.eu-central-1.amazonaws.com';
 
   @override
   void initState() {
@@ -82,22 +79,32 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
     });
 
     try {
-      final accessToken = await _getAccessToken();
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $accessToken',
+      final request = GraphQLRequest<String>(
+        document: '''
+          mutation CreateDevice(\$deviceName: String!, \$updatePeriod: Int!) {
+            createDevice(deviceName: \$deviceName, updatePeriod: \$updatePeriod) {
+              thingArn
+              iotEndpoint
+              certificates {
+                certificatePem
+                privateKey
+                publicKey
+                caCertificate
+              }
+              shadow
+            }
+          }
+        ''',
+        variables: {
+          'deviceName': deviceName,
+          'updatePeriod': updatePeriod,
         },
-        body: jsonEncode({
-          "deviceName": deviceName,
-          "updatePeriod": updatePeriod,
-          "ownerID": _ownerID,
-        }),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+      final response = await Amplify.API.mutate(request: request).response;
+
+      if (response.errors.isEmpty && response.data != null) {
+        final data = jsonDecode(response.data!)['createDevice'];
         final arnParts = (data['thingArn'] as String).split(':');
         setState(() {
           deviceId = arnParts.last;
@@ -111,9 +118,10 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
           caCertificate = data['certificates']['caCertificate'];
         });
         debugPrint('Device added successfully: $deviceId');
+        _showSnackBar('Device added successfully');
       } else {
-        debugPrint('Failed to add device. Status: ${response.statusCode}');
-        _showSnackBar('Failed to add device. Status: ${response.statusCode}');
+        debugPrint('Failed to add device. Errors: ${response.errors}');
+        _showSnackBar('Failed to add device. Check logs for details.');
       }
     } catch (e) {
       debugPrint('Error adding device: $e');
@@ -122,18 +130,6 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
       setState(() {
         _isLoading = false;
       });
-    }
-  }
-
-  Future<String> _getAccessToken() async {
-    try {
-      final cognitoPlugin = Amplify.Auth.getPlugin(AmplifyAuthCognito.pluginKey);
-      final cognitoSession = await cognitoPlugin.fetchAuthSession();
-      final tokens = cognitoSession.userPoolTokensResult.value;
-      return tokens.accessToken.raw;
-    } catch (e) {
-      debugPrint('Error fetching access token: $e');
-      throw Exception('Failed to fetch access token.');
     }
   }
 

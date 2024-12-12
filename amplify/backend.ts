@@ -4,18 +4,14 @@ import * as iot from 'aws-cdk-lib/aws-iot';
 import { auth} from './auth/resource';
 import { tableSchema} from './data/resource';
 import { createDevice } from './lambdas/createDevice/resource';
-import { fetchDevices } from './lambdas/fetchDevices/resource';
 import { deleteDevice } from './lambdas/deleteDevice/resource';
-import {fetchDeviceData} from './lambdas/fetchDeviceData/resource'
 import { fetchDeviceShadow } from './lambdas/fetchDeviceShadow/resource';
 
 export const backend = defineBackend({
   auth,
-  tableSchema, // Deploy DynamoDB schema
-  createDevice, // CreateDevice depends on IoT Core
-  fetchDevices, // FetchDevices depends on DynamoDB
+  tableSchema, 
+  createDevice, 
   deleteDevice,
-  fetchDeviceData,
   fetchDeviceShadow,
 });
 
@@ -81,21 +77,6 @@ createDeviceLambda.addToRolePolicy(iotPolicyAdd);
 createDeviceLambda.addToRolePolicy(certPolicy);
 createDeviceLambda.addToRolePolicy(generalIotPolicy);
 
-// Permissions for fetchDevices Lambda
-const fetchDevicesLambda = backend.fetchDevices.resources.lambda;
-
-const dynamoDbReadPolicy = new iam.PolicyStatement({
-  effect: iam.Effect.ALLOW,
-  actions: ['dynamodb:Query', 'dynamodb:GetItem'],
-  resources: [
-    'arn:aws:dynamodb:eu-central-1:891612540400:table/telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE',
-    'arn:aws:dynamodb:eu-central-1:891612540400:table/telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE/index/OwnerIDIndex',
-  ],
-});
-
-// Attach the policy to the fetchDevices Lambda
-fetchDevicesLambda.addToRolePolicy(dynamoDbReadPolicy);
-
 const deleteDevicesLambda = backend.deleteDevice.resources.lambda;
 
 // Define IAM policy for DynamoDB
@@ -118,20 +99,6 @@ const iotPolicyDelete = new iam.PolicyStatement({
 
 deleteDevicesLambda.addToRolePolicy(dynamoDbPolicy);
 deleteDevicesLambda.addToRolePolicy(iotPolicyDelete);
-
-// permission for fetchDeviceData lambda
-const fetchDeviceDataLambda = backend.fetchDeviceData.resources.lambda;
-
-const dynamoDbFetchDeviceDataPolicy = new iam.PolicyStatement({
-  effect: iam.Effect.ALLOW,
-  actions: ['dynamodb:Query', 'dynamodb:GetItem'],
-  resources: [
-    'arn:aws:dynamodb:eu-central-1:891612540400:table/telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE',
-    'arn:aws:dynamodb:eu-central-1:891612540400:table/telemetry-a6dyastvzzaqjm7q7k6zsdbz3e-NONE/index/OwnerIDIndex',
-  ],
-});
-
-fetchDeviceDataLambda.addToRolePolicy(dynamoDbFetchDeviceDataPolicy);
 
 //permission for fetchDeviceShadow
 const fetchDeviceShadowLambda = backend.fetchDeviceShadow.resources.lambda;

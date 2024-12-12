@@ -56,9 +56,9 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
         ''',
         variables: {
           'ownerID': ownerID,
-          'device_id': {'eq': deviceId}, // Match the expected key condition
-          'sortDirection': 'ASC', // Fetch items in ascending order by timestamp
-          'limit': 50, // Fetch only the latest 50 items
+          'device_id': {'eq': deviceId},
+          'sortDirection': 'ASC',
+          'limit': 50,
         },
       );
 
@@ -73,7 +73,6 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
         final responseData = jsonDecode(response.data!)['listTelemetryByOwnerAndDevice']['items'];
         final telemetryItems = responseData.map<telemetry>((item) => telemetry.fromJson(item)).toList();
 
-        // Ensure the items are sorted in ascending order of timestamp
         telemetryItems.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
         debugPrint('Fetched telemetry items (sorted): ${telemetryItems.length}');
@@ -169,7 +168,19 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                                   interval: points.length > 6 ? (points.length ~/ 6).toDouble() : 1,
                                   getTitlesWidget: (value, meta) {
                                     final timestamp = points[value.toInt()].timestamp;
-                                    return Text(DateFormat('MM/dd').format(timestamp));
+
+                                    if (value == points.length - 1) {
+                                      return Text(
+                                        DateFormat('MM/dd').format(timestamp),
+                                        style: const TextStyle(fontSize: 10),
+                                      );
+                                    } else if (value % (points.length ~/ 6).toDouble() == 0) {
+                                      return Text(
+                                        DateFormat('MM/dd').format(timestamp),
+                                        style: const TextStyle(fontSize: 10),
+                                      );
+                                    }
+                                    return const Text('');
                                   },
                                 ),
                               ),
