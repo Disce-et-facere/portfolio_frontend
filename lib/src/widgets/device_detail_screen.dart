@@ -35,7 +35,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
         document: '''
           query ListTelemetryByOwnerAndDevice(
             \$ownerID: String!
-            \$device_id: String!
+            \$device_id: ModelStringKeyConditionInput
             \$sortDirection: ModelSortDirection
             \$limit: Int
           ) {
@@ -56,7 +56,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
         ''',
         variables: {
           'ownerID': ownerID,
-          'device_id': deviceId,
+          'device_id': {'eq': deviceId}, // Wrap the deviceId in a key condition
           'sortDirection': 'DESC', // Fetch latest items first
           'limit': 50, // Fetch only the latest 50 items
         },

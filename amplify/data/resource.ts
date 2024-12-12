@@ -17,7 +17,7 @@ export const schema = a.schema({
         .sortKeys(['timestamp'])
         .name('OwnerIDIndex')
         .queryField('listDevicesByOwnerID'),
-      index('ownerID') // New GSI for ownerID and device_id
+      index('ownerID')
         .sortKeys(['device_id'])
         .name('OwnerIDDeviceIDIndex')
         .queryField('listTelemetryByOwnerAndDevice'),
