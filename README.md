@@ -20,6 +20,7 @@ This project is a **scalable and lightweight IoT dashboard** designed for custom
 - **IoT Core**: Manages communication and data routing for connected IoT devices.
 - **Amplify**: Simplifies the development workflow for seamless frontend and AppSync backend integration.
 - **AppSync**: Provides GraphQL APIs for secure and scalable communication between the frontend and backend.
+- **Lambda**: Executes backend logic for data processing and device management.
 - **DynamoDB**: NoSQL database for storing device data and user associations.
 - **Cognito**: Manages secure user authentication and authorization.
 - **IAM**: Enforces security policies for AWS services.
