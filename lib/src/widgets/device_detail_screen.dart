@@ -152,25 +152,32 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                             ],
                             lineTouchData: LineTouchData(
                               touchTooltipData: LineTouchTooltipData(
-                                tooltipRoundedRadius: 8,
+                                tooltipRoundedRadius: 8, // Rounded corners for the tooltip
+                                tooltipPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8), // Padding inside the tooltip
+                                tooltipMargin: 16, // Margin between the tooltip and the chart
                                 getTooltipItems: (touchedSpots) {
                                   return touchedSpots.map((spot) {
-                                    final timestamp = points[spot.x.toInt()].timestamp;
+                                    final dataPoint = points[spot.x.toInt()];
+                                    final timestamp = dataPoint.timestamp;
+                                    final value = dataPoint.value;
+
+                                    // Format the tooltip to include timestamp and value
                                     return LineTooltipItem(
-                                      DateFormat('MM/dd/yyyy HH:mm:ss').format(timestamp),
-                                      const TextStyle(color: Colors.white, fontSize: 12),
+                                      '${DateFormat('MM/dd/yyyy HH:mm:ss').format(timestamp)}\nValue: $value',
+                                      const TextStyle(color: Colors.white, fontSize: 12), // Tooltip text style
                                     );
                                   }).toList();
                                 },
+                                getTooltipColor: (spot) => Colors.black87, // Set the tooltip background color
                               ),
                               touchCallback: (FlTouchEvent event, LineTouchResponse? response) {
                                 if (response != null && response.lineBarSpots != null) {
                                   final touchedSpot = response.lineBarSpots!.first;
                                   final timestamp = points[touchedSpot.x.toInt()].timestamp;
-                                  debugPrint('Hovered over: ${DateFormat('MM/dd/yyyy HH:mm:ss').format(timestamp)}');
+                                  final value = points[touchedSpot.x.toInt()].value;
+                                  debugPrint('Hovered over: ${DateFormat('MM/dd/yyyy HH:mm:ss').format(timestamp)}, Value: $value');
                                 }
                               },
-                              handleBuiltInTouches: true,
                             ),
                           ),
                         ),

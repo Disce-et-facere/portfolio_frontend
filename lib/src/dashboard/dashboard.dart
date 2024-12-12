@@ -372,9 +372,9 @@ class DeviceCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: deviceDataMap.entries.map((entry) {
                 if (entry.key == 'status') return Container(); // Skip status
-                if (entry.key.endsWith('-Unit')) return Container();
+                if (entry.key.endsWith('-unit')) return Container();
 
-                final unitKey = '${entry.key}-Unit';
+                final unitKey = '${entry.key}-unit';
                 final unit = deviceDataMap[unitKey] ?? '';
 
                 return Text(

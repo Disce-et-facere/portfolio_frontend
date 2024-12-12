@@ -8,34 +8,33 @@ export const schema = a.schema({
       timestamp: a.timestamp().required(),
       ownerID: a.string().required(),
       deviceData: a.json().required(),
-      createdAt: a.timestamp().required(), // Use string for AWSDateTime
-      updatedAt: a.timestamp().required(), // Use string for AWSDateTime
+      createdAt: a.timestamp().required(),
+      updatedAt: a.timestamp().required(),
     })
-    .identifier(['device_id', 'timestamp']) // Composite primary key
+    .identifier(['device_id', 'timestamp'])
     .secondaryIndexes((index) => [
-      index('ownerID') // Partition key
-        .sortKeys(['timestamp']) // Sort key
-        .name('OwnerIDIndex') // GSI name
-        .queryField('listDevicesByOwnerID'), // Query field
+      index('ownerID')
+        .sortKeys(['timestamp']) 
+        .name('OwnerIDIndex')
+        .queryField('listDevicesByOwnerID'),
     ])
     .authorization((rules) => [rules.authenticated('userPools')]),
 
-  // Custom return type for the `fetchDeviceShadow` query
+  // fetch device shadow
   FetchShadowResponse: a.customType({
     deviceId: a.string().required(),
     status: a.string(),
     deviceData: a.json(),
   }),
 
-  // Define the custom query
   fetchDeviceShadow: a
     .query()
     .arguments({
       deviceId: a.string().required(),
     })
-    .returns(a.ref('FetchShadowResponse')) // Return type
-    .authorization((allow) => [allow.authenticated('userPools')]) // Authorization rules
-    .handler(a.handler.function(fetchDeviceShadow)), // Link to the function handler
+    .returns(a.ref('FetchShadowResponse'))
+    .authorization((allow) => [allow.authenticated('userPools')])
+    .handler(a.handler.function(fetchDeviceShadow)),
 });
 
 export type Schema = ClientSchema<typeof schema>;
