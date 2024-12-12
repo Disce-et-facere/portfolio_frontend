@@ -262,6 +262,7 @@ Future<void> _fetchShadow(String deviceId) async {
                           MaterialPageRoute(
                             builder: (context) => DeviceDetailScreen(
                               deviceId: device.device_id,
+                              ownerID: ownerId,
                             ),
                           ),
                         ),

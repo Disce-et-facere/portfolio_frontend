@@ -8,8 +8,13 @@ import '../../models/telemetry.dart';
 
 class DeviceDetailScreen extends StatefulWidget {
   final String deviceId;
+  final String ownerID; // Add ownerID parameter
 
-  const DeviceDetailScreen({super.key, required this.deviceId});
+  const DeviceDetailScreen({
+    super.key,
+    required this.deviceId,
+    required this.ownerID, // Add ownerID
+  });
 
   @override
   State<DeviceDetailScreen> createState() => _DeviceDetailScreenState();
@@ -21,15 +26,16 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _deviceDataFuture = _fetchDeviceData(widget.deviceId);
+    _deviceDataFuture = _fetchDeviceData(widget.deviceId, widget.ownerID);
   }
 
-  Future<List<telemetry>> _fetchDeviceData(String deviceId) async {
-    debugPrint('Fetching telemetry for deviceId: $deviceId');
+  Future<List<telemetry>> _fetchDeviceData(String deviceId, String ownerID) async {
+    debugPrint('Fetching telemetry for deviceId: $deviceId and ownerID: $ownerID');
     try {
       final request = ModelQueries.list(
         telemetry.classType,
-        where: telemetry.DEVICE_ID.eq(deviceId),
+        where: telemetry.DEVICE_ID.eq(deviceId).and(telemetry.OWNERID.eq(ownerID)), // Filter by deviceId and ownerID
+        limit: 50, // Fetch only the latest 50 items
       );
 
       debugPrint('Query: ${request.variables}');
@@ -41,10 +47,14 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
 
       if (response.data != null) {
         final telemetryItems = response.data!.items.whereType<telemetry>().toList();
-        debugPrint('Filtered telemetry items: $telemetryItems');
+
+        // Sort by timestamp descending (newest first)
+        telemetryItems.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+        debugPrint('Filtered telemetry items: ${telemetryItems.length}');
         return telemetryItems;
       } else {
-        debugPrint('No data returned for deviceId: $deviceId');
+        debugPrint('No data returned for deviceId: $deviceId and ownerID: $ownerID');
         throw Exception('Failed to fetch data for deviceId: $deviceId');
       }
     } catch (e) {
@@ -159,6 +169,40 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                                 belowBarData: BarAreaData(show: false),
                               ),
                             ],
+                            lineTouchData: LineTouchData(
+                              touchTooltipData: LineTouchTooltipData(
+                                tooltipRoundedRadius: 8,
+                                tooltipPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                tooltipMargin: 16,
+                                getTooltipItems: (touchedSpots) {
+                                  return touchedSpots.map((spot) {
+                                    final dataPoint = points[spot.x.toInt()];
+                                    final timestamp = dataPoint.timestamp;
+                                    final value = dataPoint.value;
+
+                                    // Format the tooltip to include timestamp and value
+                                    return LineTooltipItem(
+                                      '${DateFormat('MM/dd/yyyy HH:mm:ss').format(timestamp)}\nValue: $value $unitValue',
+                                      const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                      ),
+                                    );
+                                  }).toList();
+                                },
+                                getTooltipColor: (spot) => Colors.black87, // Set tooltip background color
+                              ),
+                              touchCallback: (FlTouchEvent event, LineTouchResponse? response) {
+                                if (response != null && response.lineBarSpots != null) {
+                                  final touchedSpot = response.lineBarSpots!.first;
+                                  final timestamp = points[touchedSpot.x.toInt()].timestamp;
+                                  final value = points[touchedSpot.x.toInt()].value;
+                                  debugPrint(
+                                    'Hovered over: ${DateFormat('MM/dd/yyyy HH:mm:ss').format(timestamp)}, Value: $value $unitValue',
+                                  );
+                                }
+                              },
+                            ),
                           ),
                         ),
                       ),
