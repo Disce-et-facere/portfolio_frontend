@@ -25,6 +25,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
   }
 
   Future<List<telemetry>> _fetchDeviceData(String deviceId) async {
+    debugPrint('Error fetching device data: $deviceId');
     try {
       final request = ModelQueries.list(
         telemetry.classType,
