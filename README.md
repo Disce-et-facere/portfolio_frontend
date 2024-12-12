@@ -6,9 +6,9 @@ This project is a **scalable and lightweight IoT dashboard** designed for custom
 
 ## 🚀 Features
 
-- **Multi-Sensor Support**: Seamlessly manage devices equipped with multiple sensors, enabling comprehensive monitoring and data visualization.
 - **Device Management**: View and manage IoT devices.
 - **Data Visualization**: Display device data such as temperature, humidity, and more in a clean, intuitive interface.
+- **Multi-Sensor Support**: Seamlessly manage devices equipped with multiple sensors, enabling comprehensive monitoring and data visualization.
 - **Authentication**: Secure login and device association using Cognito.
 - **Scalability**: Built entirely on AWS services with a focus on scalability, safety, and cost-effective maintenance.
 
