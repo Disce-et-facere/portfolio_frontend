@@ -71,7 +71,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
             final measurements = jsonDecode(item.deviceData) as Map<String, dynamic>;
 
             measurements.forEach((key, value) {
-              if (!key.endsWith('-Unit')) {
+              if (!key.endsWith('-unit')) {
                 groupedData.putIfAbsent(key, () => []);
                 groupedData[key]!.add(DataPoint(
                   timestamp: DateTime.fromMillisecondsSinceEpoch(timestamp * 1000),
@@ -89,7 +89,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
               final unit = telemetryData.firstWhere(
                     (item) =>
                         (jsonDecode(item.deviceData) as Map<String, dynamic>)
-                            .containsKey('$measurementType-Unit'),
+                            .containsKey('$measurementType-unit'),
                     orElse: () => telemetry(
                       device_id: '',
                       timestamp: telemetryData.first.timestamp,
@@ -98,7 +98,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                     ),
                   )
                   .deviceData;
-              final unitValue = jsonDecode(unit)['$measurementType-Unit'] ?? '';
+              final unitValue = jsonDecode(unit)['$measurementType-unit'] ?? '';
 
               final points = groupedData[measurementType]!;
 
