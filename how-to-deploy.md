@@ -27,7 +27,11 @@ the values on AWS CLI, website)
 5. set iot Core/ message route/ rule to:  
 
    ```sql
-   SELECT *, clientid() AS DeviceId, timestamp() AS Timestamp FROM '+/telemetry' 
+   SELECT *, 
+   clientid() AS device_id, 
+   floor(timestamp() / 1000) AS timestamp, 
+   floor(timestamp() / 1000) AS createdAt, 
+   floor(timestamp() / 1000) AS updatedAt FROM '+/telemetry'
    ```
 
 6.  set iotcore policy for incoming pubs
@@ -35,3 +39,4 @@ the values on AWS CLI, website)
 7.  set permission for iot core to send data to dynamoDB
 
 8.  ReDeploy!
+

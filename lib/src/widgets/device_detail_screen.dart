@@ -226,16 +226,6 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                                 },
                                 getTooltipColor: (spot) => Colors.black87,
                               ),
-                              touchCallback: (FlTouchEvent event, LineTouchResponse? response) {
-                                if (response != null && response.lineBarSpots != null) {
-                                  final touchedSpot = response.lineBarSpots!.first;
-                                  final timestamp = points[touchedSpot.x.toInt()].timestamp;
-                                  final value = points[touchedSpot.x.toInt()].value;
-                                  debugPrint(
-                                    'Hovered over: ${DateFormat('MM/dd/yyyy HH:mm:ss').format(timestamp)}, Value: $value $unitValue',
-                                  );
-                                }
-                              },
                             ),
                           ),
                         ),

@@ -81,150 +81,150 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
-Future<void> _fetchDevices() async {
-  debugPrint('Starting _fetchDevices...');
-  debugPrint('OwnerID passed to _fetchDevices: $ownerId');
-  try {
-    final query = '''
-      query ListDevicesByOwnerID(
-        \$ownerID: String!
-        \$sortDirection: ModelSortDirection
-        \$limit: Int
-      ) {
-        listDevicesByOwnerID(
-          ownerID: \$ownerID
-          sortDirection: \$sortDirection
-          limit: \$limit
+  Future<void> _fetchDevices() async {
+    debugPrint('Starting _fetchDevices...');
+    debugPrint('OwnerID passed to _fetchDevices: $ownerId');
+    try {
+      final query = '''
+        query ListDevicesByOwnerID(
+          \$ownerID: String!
+          \$sortDirection: ModelSortDirection
+          \$limit: Int
         ) {
-          items {
-            device_id
-            timestamp
-            deviceData
+          listDevicesByOwnerID(
+            ownerID: \$ownerID
+            sortDirection: \$sortDirection
+            limit: \$limit
+          ) {
+            items {
+              device_id
+              timestamp
+              deviceData
+            }
           }
         }
-      }
-    ''';
+      ''';
 
-    final response = await Amplify.API.query<String>(
-      request: GraphQLRequest<String>(
-        document: query,
-        variables: {
-          'ownerID': ownerId,
-          'sortDirection': 'DESC',
-          'limit': 50,
-        },
-      ),
-    ).response;
+      final response = await Amplify.API.query<String>(
+        request: GraphQLRequest<String>(
+          document: query,
+          variables: {
+            'ownerID': ownerId,
+            'sortDirection': 'DESC',
+            'limit': 50,
+          },
+        ),
+      ).response;
 
-    if (response.data != null) {
-      final responseData = jsonDecode(response.data!)['listDevicesByOwnerID']['items'];
-      debugPrint('Response data from _fetchDevices: $responseData');
+      if (response.data != null) {
+        final responseData = jsonDecode(response.data!)['listDevicesByOwnerID']['items'];
+        debugPrint('Response data from _fetchDevices: $responseData');
 
-      final groupedDevices = <String, telemetry>{};
-      for (var deviceData in responseData) {
-        final device = telemetry.fromJson(deviceData);
-        groupedDevices[device.device_id] = device;
-      }
-
-      setState(() {
-        devices = groupedDevices.values.toList();
-        debugPrint('Devices list updated in state: $devices');
-      });
-
-      // Fetch shadow data only for devices without a known status
-      for (final device in devices) {
-        if (!deviceStatuses.containsKey(device.device_id)) {
-          await _fetchShadow(device.device_id);
+        final groupedDevices = <String, telemetry>{};
+        for (var deviceData in responseData) {
+          final device = telemetry.fromJson(deviceData);
+          groupedDevices[device.device_id] = device;
         }
+
+        setState(() {
+          devices = groupedDevices.values.toList();
+          debugPrint('Devices list updated in state: $devices');
+        });
+
+        // Fetch shadow data only for devices without a known status
+        for (final device in devices) {
+          if (!deviceStatuses.containsKey(device.device_id)) {
+            await _fetchShadow(device.device_id);
+          }
+        }
+      } else {
+        debugPrint('No devices found.');
       }
-    } else {
-      debugPrint('No devices found.');
+    } catch (e) {
+      debugPrint('Error fetching devices: $e');
     }
-  } catch (e) {
-    debugPrint('Error fetching devices: $e');
   }
-}
 
 
-Future<void> _fetchShadow(String deviceId) async {
-  debugPrint('Fetching shadow status for device: $deviceId');
+  Future<void> _fetchShadow(String deviceId) async {
+    debugPrint('Fetching shadow status for device: $deviceId');
 
-  try {
-    final response = await Amplify.API.query<String>(
-      request: GraphQLRequest<String>(
+    try {
+      final response = await Amplify.API.query<String>(
+        request: GraphQLRequest<String>(
+          document: '''
+            query FetchDeviceShadow(\$deviceId: String!) {
+              fetchDeviceShadow(deviceId: \$deviceId) {
+                deviceId
+                status
+              }
+            }
+          ''',
+          variables: {'deviceId': deviceId},
+        ),
+      ).response;
+
+      if (response.data != null) {
+        final shadowData = jsonDecode(response.data!)['fetchDeviceShadow'];
+
+        if (shadowData != null) {
+          final status = shadowData['status'] ?? 'Unknown';
+          setState(() {
+            deviceStatuses[deviceId] = status; // Update device status
+          });
+          debugPrint('Updated status for device $deviceId: $status');
+        } else {
+          debugPrint('Shadow status for $deviceId is null.');
+        }
+      } else {
+        debugPrint('No shadow data returned for device: $deviceId');
+      }
+    } catch (e) {
+      debugPrint('Error fetching shadow for $deviceId: $e');
+    }
+  }
+
+  Future<void> _deleteDevice(String deviceId, String ownerId) async {
+    try {
+      final request = GraphQLRequest<String>(
         document: '''
-          query FetchDeviceShadow(\$deviceId: String!) {
-            fetchDeviceShadow(deviceId: \$deviceId) {
-              deviceId
-              status
+          mutation DeleteDevice(\$deviceId: String!, \$ownerId: String!) {
+            deleteDevice(deviceId: \$deviceId, ownerId: \$ownerId) {
+              message
             }
           }
         ''',
-        variables: {'deviceId': deviceId},
-      ),
-    ).response;
+        variables: {
+          'deviceId': deviceId,
+          'ownerId': ownerId,
+        },
+      );
 
-    if (response.data != null) {
-      final shadowData = jsonDecode(response.data!)['fetchDeviceShadow'];
+      final response = await Amplify.API.mutate(request: request).response;
 
-      if (shadowData != null) {
-        final status = shadowData['status'] ?? 'Unknown';
-        setState(() {
-          deviceStatuses[deviceId] = status; // Update device status
-        });
-        debugPrint('Updated status for device $deviceId: $status');
-      } else {
-        debugPrint('Shadow status for $deviceId is null.');
-      }
-    } else {
-      debugPrint('No shadow data returned for device: $deviceId');
-    }
-  } catch (e) {
-    debugPrint('Error fetching shadow for $deviceId: $e');
-  }
-}
+      if (response.errors.isEmpty) {
+        final message = jsonDecode(response.data!)['deleteDevice']['message'];
 
-Future<void> _deleteDevice(String deviceId, String ownerId) async {
-  try {
-    final request = GraphQLRequest<String>(
-      document: '''
-        mutation DeleteDevice(\$deviceId: String!, \$ownerId: String!) {
-          deleteDevice(deviceId: \$deviceId, ownerId: \$ownerId) {
-            message
-          }
+        // Check if the widget is still mounted before calling setState or showing a SnackBar
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+
+          setState(() {
+            devices.removeWhere((device) => device.device_id == deviceId);
+          });
         }
-      ''',
-      variables: {
-        'deviceId': deviceId,
-        'ownerId': ownerId,
-      },
-    );
-
-    final response = await Amplify.API.mutate(request: request).response;
-
-    if (response.errors.isEmpty) {
-      final message = jsonDecode(response.data!)['deleteDevice']['message'];
-
-      // Check if the widget is still mounted before calling setState or showing a SnackBar
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-
-        setState(() {
-          devices.removeWhere((device) => device.device_id == deviceId);
-        });
+      } else {
+        throw Exception(response.errors.first.message);
       }
-    } else {
-      throw Exception(response.errors.first.message);
-    }
-  } catch (e) {
-    debugPrint('Error deleting device: $e');
+    } catch (e) {
+      debugPrint('Error deleting device: $e');
 
-    // Check if the widget is still mounted before showing a SnackBar
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      // Check if the widget is still mounted before showing a SnackBar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     }
   }
-}
 
 
 
@@ -262,13 +262,13 @@ Future<void> _deleteDevice(String deviceId, String ownerId) async {
   
   @override
   Widget build(BuildContext context) {
-    /*final messages = [
+    final messages = [
       Message(content: 'Low battery on Device 1', type: MessageType.warning),
       Message(content: 'Temperature too high on Device 2', type: MessageType.alert),
       Message(content: 'Device 3 disconnected', type: MessageType.alert),
       Message(content: 'Firmware update available for Device 1', type: MessageType.warning),
-    ];*/
-    
+    ];
+
     return Scaffold(
       appBar: Toolbar(
         username: userEmail ?? 'Loading...',
@@ -343,6 +343,11 @@ Future<void> _deleteDevice(String deviceId, String ownerId) async {
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+              Expanded(
+                flex: 2, // Allocate space for the MessageBoard
+                child: MessageBoard(messages: messages),
+              ),
             ],
           ),
         ],
@@ -393,48 +398,40 @@ class DeviceCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center, // Center content horizontally
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        iconData,
-                        color: iconColor,
-                        size: 36,
+              Center(
+                child: Column(
+                  children: [
+                    Icon(
+                      iconData,
+                      color: iconColor,
+                      size: 36,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Device ID: ${device.device_id}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Device ID: ${device.device_id}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Status: $currentStatus',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Status: $currentStatus',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Last Updated: $formattedTimestamp',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: onDelete, // Trigger the onDelete callback
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Last Updated: $formattedTimestamp',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
               ),
               const Divider(),
               Column(
@@ -450,6 +447,16 @@ class DeviceCard extends StatelessWidget {
                     style: const TextStyle(fontSize: 12),
                   );
                 }).toList(),
+              ),
+              const Spacer(), // Push the delete button to the bottom
+              TextButton.icon(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.red, // Text color
+                  padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                ),
+                icon: const Icon(Icons.delete),
+                label: const Text('Delete Device'), // Add "Delete Device" text
+                onPressed: onDelete, // Trigger the onDelete callback
               ),
             ],
           ),
