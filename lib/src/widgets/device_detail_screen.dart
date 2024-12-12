@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart'; // For graphing
-import 'package:amplify_api/amplify_api.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:amplify_flutter/amplify_flutter.dart';
@@ -8,12 +7,12 @@ import '../../models/telemetry.dart';
 
 class DeviceDetailScreen extends StatefulWidget {
   final String deviceId;
-  final String ownerID; // Add ownerID parameter
+  final String ownerID;
 
   const DeviceDetailScreen({
     super.key,
     required this.deviceId,
-    required this.ownerID, // Add ownerID
+    required this.ownerID,
   });
 
   @override
@@ -30,15 +29,38 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
   }
 
   Future<List<telemetry>> _fetchDeviceData(String deviceId, String ownerID) async {
-    debugPrint('Fetching telemetry for deviceId: $deviceId and ownerID: $ownerID');
+    debugPrint('Fetching telemetry for deviceId: $deviceId and ownerID: $ownerID using GSI');
     try {
-      final request = ModelQueries.list(
-        telemetry.classType,
-        where: telemetry.DEVICE_ID.eq(deviceId).and(telemetry.OWNERID.eq(ownerID)), // Filter by deviceId and ownerID
-        limit: 50, // Fetch only the latest 50 items
+      final request = GraphQLRequest<String>(
+        document: '''
+          query ListDevicesByOwnerID(
+            \$ownerID: String!
+            \$deviceId: String
+            \$sortDirection: ModelSortDirection
+            \$limit: Int
+          ) {
+            listDevicesByOwnerID(
+              ownerID: \$ownerID
+              sortDirection: \$sortDirection
+              limit: \$limit
+            ) {
+              items {
+                device_id
+                timestamp
+                ownerID
+                deviceData
+              }
+            }
+          }
+        ''',
+        variables: {
+          'ownerID': ownerID,
+          'sortDirection': 'DESC',
+          'limit': 50,
+        },
       );
 
-      debugPrint('Query: ${request.variables}');
+      debugPrint('GraphQL Request: $request');
 
       final response = await Amplify.API.query(request: request).response;
 
@@ -46,20 +68,21 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
       debugPrint('Errors: ${response.errors}');
 
       if (response.data != null) {
-        final telemetryItems = response.data!.items.whereType<telemetry>().toList();
+        final responseData = jsonDecode(response.data!)['listDevicesByOwnerID']['items'];
+        final telemetryItems = responseData.map<telemetry>((item) => telemetry.fromJson(item)).toList();
 
-        // Sort by timestamp descending (newest first)
-        telemetryItems.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        // Optional: Further filter by device_id if needed
+        final filteredTelemetry = telemetryItems.where((item) => item.device_id == deviceId).toList();
 
-        debugPrint('Filtered telemetry items: ${telemetryItems.length}');
-        return telemetryItems;
+        debugPrint('Filtered telemetry items: ${filteredTelemetry.length}');
+        return filteredTelemetry;
       } else {
-        debugPrint('No data returned for deviceId: $deviceId and ownerID: $ownerID');
-        throw Exception('Failed to fetch data for deviceId: $deviceId');
+        debugPrint('No data returned for ownerID: $ownerID');
+        return [];
       }
     } catch (e) {
-      debugPrint('Error fetching device data: $e');
-      throw Exception('Error fetching device data');
+      debugPrint('Error fetching telemetry data: $e');
+      throw Exception('Error fetching telemetry data');
     }
   }
 
@@ -82,7 +105,6 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
 
           final List<telemetry> telemetryData = snapshot.data!;
 
-          // Group data by measurement type for the graph
           final Map<String, List<DataPoint>> groupedData = {};
 
           for (final item in telemetryData) {
@@ -180,7 +202,6 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                                     final timestamp = dataPoint.timestamp;
                                     final value = dataPoint.value;
 
-                                    // Format the tooltip to include timestamp and value
                                     return LineTooltipItem(
                                       '${DateFormat('MM/dd/yyyy HH:mm:ss').format(timestamp)}\nValue: $value $unitValue',
                                       const TextStyle(
@@ -190,7 +211,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                                     );
                                   }).toList();
                                 },
-                                getTooltipColor: (spot) => Colors.black87, // Set tooltip background color
+                                getTooltipColor: (spot) => Colors.black87,
                               ),
                               touchCallback: (FlTouchEvent event, LineTouchResponse? response) {
                                 if (response != null && response.lineBarSpots != null) {

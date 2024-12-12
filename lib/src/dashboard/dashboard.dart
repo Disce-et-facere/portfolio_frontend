@@ -110,8 +110,8 @@ Future<void> _fetchDevices() async {
         document: query,
         variables: {
           'ownerID': ownerId,
-          'sortDirection': 'DESC', // Fetch latest items first
-          'limit': 50, // Adjust limit based on your requirements
+          'sortDirection': 'DESC',
+          'limit': 50,
         },
       ),
     ).response;
