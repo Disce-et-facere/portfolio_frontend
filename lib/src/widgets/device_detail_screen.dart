@@ -56,13 +56,13 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
         ''',
         variables: {
           'ownerID': ownerID,
-          'device_id': {'eq': deviceId}, // Wrap the deviceId in a key condition
-          'sortDirection': 'DESC', // Fetch latest items first
+          'device_id': {'eq': deviceId}, // Match the expected key condition
+          'sortDirection': 'ASC', // Fetch items in ascending order by timestamp
           'limit': 50, // Fetch only the latest 50 items
         },
       );
 
-      debugPrint('GraphQL Request: $request');
+      debugPrint('GraphQL Request Variables: ${request.variables}');
 
       final response = await Amplify.API.query(request: request).response;
 
@@ -73,7 +73,10 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
         final responseData = jsonDecode(response.data!)['listTelemetryByOwnerAndDevice']['items'];
         final telemetryItems = responseData.map<telemetry>((item) => telemetry.fromJson(item)).toList();
 
-        debugPrint('Fetched telemetry items: ${telemetryItems.length}');
+        // Ensure the items are sorted in ascending order of timestamp
+        telemetryItems.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+        debugPrint('Fetched telemetry items (sorted): ${telemetryItems.length}');
         return telemetryItems;
       } else {
         debugPrint('No data returned for ownerID: $ownerID and deviceId: $deviceId');
