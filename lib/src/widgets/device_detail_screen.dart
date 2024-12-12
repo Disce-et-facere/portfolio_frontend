@@ -35,7 +35,6 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
         document: '''
           query ListDevicesByOwnerID(
             \$ownerID: String!
-            \$deviceId: String
             \$sortDirection: ModelSortDirection
             \$limit: Int
           ) {
