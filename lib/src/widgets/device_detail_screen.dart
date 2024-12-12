@@ -131,7 +131,7 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                                 ),
                               ),
                               leftTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: true),
+                                sideTitles: SideTitles(showTitles: false), // Hide left titles
                               ),
                             ),
                             lineBarsData: [
@@ -150,9 +150,31 @@ class _DeviceDetailScreenState extends State<DeviceDetailScreen> {
                                 belowBarData: BarAreaData(show: false),
                               ),
                             ],
+                            lineTouchData: LineTouchData(
+                              touchTooltipData: LineTouchTooltipData(
+                                tooltipRoundedRadius: 8,
+                                getTooltipItems: (touchedSpots) {
+                                  return touchedSpots.map((spot) {
+                                    final timestamp = points[spot.x.toInt()].timestamp;
+                                    return LineTooltipItem(
+                                      DateFormat('MM/dd/yyyy HH:mm:ss').format(timestamp),
+                                      const TextStyle(color: Colors.white, fontSize: 12),
+                                    );
+                                  }).toList();
+                                },
+                              ),
+                              touchCallback: (FlTouchEvent event, LineTouchResponse? response) {
+                                if (response != null && response.lineBarSpots != null) {
+                                  final touchedSpot = response.lineBarSpots!.first;
+                                  final timestamp = points[touchedSpot.x.toInt()].timestamp;
+                                  debugPrint('Hovered over: ${DateFormat('MM/dd/yyyy HH:mm:ss').format(timestamp)}');
+                                }
+                              },
+                              handleBuiltInTouches: true,
+                            ),
                           ),
                         ),
-                      ),
+                      )
                     ],
                   ),
                 ),

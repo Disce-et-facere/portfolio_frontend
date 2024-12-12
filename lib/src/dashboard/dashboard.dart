@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
-import 'package:amplify_api/amplify_api.dart'; // For ModelQueries
 import '../settings/settings_controller.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
