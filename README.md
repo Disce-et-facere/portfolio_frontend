@@ -77,11 +77,13 @@ This project is a **scalable and lightweight IoT dashboard** designed for custom
    floor(timestamp() / 1000) AS createdAt, 
    floor(timestamp() / 1000) AS updatedAt FROM '+/telemetry'
    ```
-5. **Adjust policy ARNs due to time constraints and the need to maintain sanity.**
+5. **Adjust policy ARNs due to time constraints and the need to maintain sanity.**:
+   
    Some arn need to be adjusted after your aws account arn in project file: amplify/backend.ts 
    Ex. "Resource: 'arn:aws:iot:{your-region}:{account-id}:client/${iot:ClientId}',
 
-6. **Redeploy the App in Amplify**:
+7. **Redeploy the App in Amplify**:
+   
    After configuring the secrets and message route rule, redeploy the app in Amplify to apply changes.
 
 ## 📝 Final Thoughts
