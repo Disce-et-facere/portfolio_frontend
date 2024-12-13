@@ -89,12 +89,10 @@ class _DashboardState extends State<Dashboard> {
         query ListDevicesByOwnerID(
           \$ownerID: String!
           \$sortDirection: ModelSortDirection
-          \$limit: Int
         ) {
           listDevicesByOwnerID(
             ownerID: \$ownerID
             sortDirection: \$sortDirection
-            limit: \$limit
           ) {
             items {
               device_id
@@ -110,8 +108,7 @@ class _DashboardState extends State<Dashboard> {
           document: query,
           variables: {
             'ownerID': ownerId,
-            'sortDirection': 'DESC',
-            'limit': 50,
+            'sortDirection': 'DESC', // Ensure we get the most recent items first
           },
         ),
       ).response;
@@ -120,10 +117,15 @@ class _DashboardState extends State<Dashboard> {
         final responseData = jsonDecode(response.data!)['listDevicesByOwnerID']['items'];
         debugPrint('Response data from _fetchDevices: $responseData');
 
+        // Group devices by their `device_id` and fetch the latest telemetry
         final groupedDevices = <String, telemetry>{};
         for (var deviceData in responseData) {
           final device = telemetry.fromJson(deviceData);
-          groupedDevices[device.device_id] = device;
+          // If device_id already exists, keep only the latest telemetry (newest timestamp)
+          if (!groupedDevices.containsKey(device.device_id) ||
+              device.timestamp.compareTo(groupedDevices[device.device_id]!.timestamp) > 0) {
+            groupedDevices[device.device_id] = device;
+          }
         }
 
         setState(() {
@@ -144,7 +146,6 @@ class _DashboardState extends State<Dashboard> {
       debugPrint('Error fetching devices: $e');
     }
   }
-
 
   Future<void> _fetchShadow(String deviceId) async {
     debugPrint('Fetching shadow status for device: $deviceId');
