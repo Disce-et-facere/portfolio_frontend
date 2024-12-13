@@ -12,6 +12,11 @@ const AWS_REGION = process.env.AWS_REGION; // placeholders if value is not set
 const AWS_ACCOUNT_ID = process.env.AWS_ACCOUNT_ID?.toString(); // placeholders if value is not set
 const TABLE_NAME = process.env.DEVICE_TABLE_NAME; // placeholders if value is not set
 
+console.log('Resolved Environment Variables:');
+console.log('AWS_REGION:', AWS_REGION);
+console.log('AWS_ACCOUNT_ID:', AWS_ACCOUNT_ID);
+console.log('TABLE_NAME:', TABLE_NAME);
+
 export const backend = defineBackend({
   auth,
   tableSchema, 
