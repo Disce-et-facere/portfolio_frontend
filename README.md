@@ -93,7 +93,7 @@ This project is a **scalable and lightweight IoT dashboard** designed for custom
 
 The device-side code for connecting to this dashboard is hosted in a separate repository. You can find it here:
 
-[Device Code Repository](<https://github.com/Disce-et-facere/Iot-Core-Mock-Device>)
+[Device Code Repository](https://github.com/Disce-et-facere/Iot-Core-Mock-Devices.git)
 
 ## 📝 Final Thoughts
 
