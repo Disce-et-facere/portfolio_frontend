@@ -20,11 +20,13 @@ export const backend = defineBackend({
   fetchDeviceShadow,
 });
 
+const ClientId: string = '${iot:ClientId}';
+
 // Build ARN's from enviroment variables
-const IOT_CLIENT_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:client/${'${iot:ClientId}'}`;
-const IOT_TOPIC_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:topic/${'${iot:ClientId}'}/telemetry`;
-const IOT_TOPIC_FILTER_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:topicfilter/${'${iot:ClientId}'}/*`;
-const IOT_RECEIVE_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:topic/${'${iot:ClientId}'}/*`;
+const IOT_CLIENT_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:client/${ClientId}`;
+const IOT_TOPIC_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:topic/${ClientId}/telemetry`;
+const IOT_TOPIC_FILTER_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:topicfilter/${ClientId}/*`;
+const IOT_RECEIVE_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:topic/${ClientId}/*`;
 const IOT_THING_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:thing/*`;
 const IOT_CERT_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:cert/*`;
 const DYNAMODB_TABLE_ARN = `arn:aws:dynamodb:${AWS_REGION}${AWS_ACCOUNT_ID}:${TABLE_NAME}`;
