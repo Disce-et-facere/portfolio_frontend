@@ -109,74 +109,74 @@ class _DashboardState extends State<Dashboard> {
     debugPrint('OwnerID passed to _fetchDevices: $ownerId');
 
     try {
-      // Step 1: Query all unique devices
-      final queryDevices = '''
-        query ListDevicesByOwnerID($ownerId: String!) {
-          listDevicesByOwnerID(ownerID: $ownerId) {
+      final query = '''
+        query ListDevicesByOwnerID(
+          \$ownerID: String!
+          \$sortDirection: ModelSortDirection
+          \$nextToken: String
+        ) {
+          listDevicesByOwnerID(
+            ownerID: \$ownerID
+            sortDirection: \$sortDirection
+            nextToken: \$nextToken
+          ) {
             items {
               device_id
+              timestamp
+              deviceData
             }
+            nextToken
           }
         }
       ''';
 
-      final devicesResponse = await Amplify.API.query<String>(
-        request: GraphQLRequest<String>(
-          document: queryDevices,
-          variables: {'ownerID': ownerId},
-        ),
-      ).response;
+      String? nextToken;
+      final List<Map<String, dynamic>> allDevices = [];
 
-      if (devicesResponse.data != null) {
-        final devicesData = jsonDecode(devicesResponse.data!)['listDevicesByOwnerID']['items'];
-        final uniqueDeviceIds = devicesData.map((device) => device['device_id']).toSet().toList();
-        debugPrint('Unique Device IDs: $uniqueDeviceIds');
+      do {
+        final response = await Amplify.API.query<String>(
+          request: GraphQLRequest<String>(
+            document: query,
+            variables: {
+              'ownerID': ownerId,
+              'sortDirection': 'DESC', // Ensure newest first
+              'nextToken': nextToken,
+            },
+          ),
+        ).response;
 
-        // Step 2: Fetch the latest telemetry data for each device
-        final List<telemetry> allDevices = [];
-        for (String deviceId in uniqueDeviceIds) {
-          final telemetryQuery = '''
-            query GetLatestTelemetryForDevice($ownerId: String!, $deviceId: String!) {
-              listTelemetryByOwnerAndDevice(ownerID: $ownerId, device_id: $deviceId, sortDirection: DESC, limit: 1) {
-                items {
-                  device_id
-                  timestamp
-                  deviceData
-                }
-              }
-            }
-          ''';
-
-          final telemetryResponse = await Amplify.API.query<String>(
-            request: GraphQLRequest<String>(
-              document: telemetryQuery,
-              variables: {'ownerID': ownerId, 'deviceId': deviceId},
-            ),
-          ).response;
-
-          if (telemetryResponse.data != null) {
-            final telemetryData =
-                jsonDecode(telemetryResponse.data!)['listTelemetryByOwnerAndDevice']['items'];
-            if (telemetryData.isNotEmpty) {
-              allDevices.add(telemetry.fromJson(telemetryData.first));
-            }
-          }
+        if (response.data != null) {
+          final responseData = jsonDecode(response.data!);
+          final items = responseData['listDevicesByOwnerID']['items'] as List;
+          allDevices.addAll(items.map((e) => e as Map<String, dynamic>));
+          nextToken = responseData['listDevicesByOwnerID']['nextToken'];
+          debugPrint('Fetched ${items.length} devices, nextToken: $nextToken');
+        } else {
+          debugPrint('No devices found.');
+          break;
         }
+      } while (nextToken != null);
 
-        // Step 3: Update the state with the fetched devices
-        setState(() {
-          devices = allDevices;
-          debugPrint('Devices list updated in state: $devices');
-        });
-
-        // Fetch shadow status for each device
-        for (final device in devices) {
-          if (!deviceStatuses.containsKey(device.device_id)) {
-            await _fetchShadow(device.device_id);
-          }
+      // Group devices by `device_id` and keep only the latest telemetry
+      final groupedDevices = <String, telemetry>{};
+      for (var deviceData in allDevices) {
+        final device = telemetry.fromJson(deviceData);
+        if (!groupedDevices.containsKey(device.device_id) ||
+            device.timestamp.compareTo(groupedDevices[device.device_id]!.timestamp) > 0) {
+          groupedDevices[device.device_id] = device;
         }
-      } else {
-        debugPrint('No devices found.');
+      }
+
+      setState(() {
+        devices = groupedDevices.values.toList();
+        debugPrint('Devices list updated in state: $devices');
+      });
+
+      // Fetch shadow data only for devices without a known status
+      for (final device in devices) {
+        if (!deviceStatuses.containsKey(device.device_id)) {
+          await _fetchShadow(device.device_id);
+        }
       }
     } catch (e) {
       debugPrint('Error fetching devices: $e');

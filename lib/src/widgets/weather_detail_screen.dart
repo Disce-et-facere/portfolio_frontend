@@ -89,16 +89,6 @@ class WeatherGraphScreen extends StatelessWidget {
                       getTooltipColor: (spot) => Colors.black87,
                     ),
                     touchCallback: (FlTouchEvent event, LineTouchResponse? response) {
-                      if (response != null && response.lineBarSpots != null) {
-                        final touchedSpot = response.lineBarSpots!.first;
-                        final index = touchedSpot.x.toInt();
-                        final rawDate = weeklyData[index]['date'];
-                        final date = DateTime.parse(rawDate);
-                        final temperature = weeklyData[index]['temperature'];
-                        debugPrint(
-                          'Hovered over: ${DateFormat('MM/dd/yyyy HH:mm:ss').format(date)}, Temp: $temperature°C',
-                        );
-                      }
                     },
                   ),
                 ),
