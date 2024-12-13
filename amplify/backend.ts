@@ -7,8 +7,8 @@ import { createDevice } from './lambdas/createDevice/resource';
 import { deleteDevice } from './lambdas/deleteDevice/resource';
 import { fetchDeviceShadow } from './lambdas/fetchDeviceShadow/resource';
 
-const REGION = process.env.AWS_REGION; // placeholders if value is not set
 const ACCOUNT_ID = process.env.USER_ACCOUNT_ID; // placeholders if value is not set
+const REGION = process.env.AWS_REGION; // placeholders if value is not set
 const TABLE_NAME = process.env.DEVICE_TABLE_NAME; // placeholders if value is not set
 
 export const backend = defineBackend({
