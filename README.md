@@ -89,6 +89,12 @@ This project is a **scalable and lightweight IoT dashboard** designed for custom
    
    After configuring the secrets and message route rule, redeploy the app in Amplify to apply changes.
 
+## 🔗 Device Code
+
+The device-side code for connecting to this dashboard is hosted in a separate repository. You can find it here:
+
+[Device Code Repository](https://github.com/Disce-et-facere/Iot-Core-Mock)
+
 ## 📝 Final Thoughts
 
 For the love of all that is sacred, avoid using the Flutter-Amplify combination until the developers have implemented all features and ensured the documentation is up to date. This will save you countless hours (or even days) of troubleshooting, frustration, and confusion.
