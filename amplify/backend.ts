@@ -6,6 +6,7 @@ import { tableSchema} from './data/resource';
 import { createDevice } from './lambdas/createDevice/resource';
 import { deleteDevice } from './lambdas/deleteDevice/resource';
 import { fetchDeviceShadow } from './lambdas/fetchDeviceShadow/resource';
+import { Environment } from 'aws-cdk-lib/aws-appconfig';
 
 const AWS_REGION = process.env.AWS_REGION || 'global'; // placeholders if value is not set
 const AWS_ACCOUNT_ID = process.env.AWS_ACCOUNT_ID || '0000000000'; // placeholders if value is not set
@@ -19,12 +20,11 @@ export const backend = defineBackend({
   fetchDeviceShadow,
 });
 
-
 // Build ARN's from enviroment variables
-const IOT_CLIENT_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:client/\${iot:ClientId}`;
-const IOT_TOPIC_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:topic/\${iot:ClientId}/telemetry`;
-const IOT_TOPIC_FILTER_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:topicfilter/\${iot:ClientId}/*`;
-const IOT_RECEIVE_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:topic/\${iot:ClientId}/*`;
+const IOT_CLIENT_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:client/${'${iot:ClientId}'}`;
+const IOT_TOPIC_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:topic/${'${iot:ClientId}'}/telemetry`;
+const IOT_TOPIC_FILTER_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:topicfilter/${'${iot:ClientId}'}/*`;
+const IOT_RECEIVE_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:topic/${'${iot:ClientId}'}/*`;
 const IOT_THING_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:thing/*`;
 const IOT_CERT_ARN = `arn:aws:iot:${AWS_REGION}:${AWS_ACCOUNT_ID}:cert/*`;
 const DYNAMODB_TABLE_ARN = `arn:aws:dynamodb:${AWS_REGION}${AWS_ACCOUNT_ID}:${TABLE_NAME}`;
