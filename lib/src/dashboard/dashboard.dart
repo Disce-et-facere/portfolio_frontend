@@ -107,56 +107,69 @@ class _DashboardState extends State<Dashboard> {
   Future<void> _fetchDevices() async {
     debugPrint('Starting _fetchDevices...');
     debugPrint('OwnerID passed to _fetchDevices: $ownerId');
+
     try {
-      final query = '''
-        query ListDevicesByOwnerID(
-          \$ownerID: String!
-          \$sortDirection: ModelSortDirection
-        ) {
-          listDevicesByOwnerID(
-            ownerID: \$ownerID
-            sortDirection: \$sortDirection
-          ) {
+      // Step 1: Fetch all unique devices
+      final queryDevices = '''
+        query ListUniqueDevicesByOwnerID($ownerId: String!) {
+          listDevicesByOwnerID(ownerID: $ownerId) {
             items {
               device_id
-              timestamp
-              deviceData
             }
           }
         }
       ''';
 
-      final response = await Amplify.API.query<String>(
+      final devicesResponse = await Amplify.API.query<String>(
         request: GraphQLRequest<String>(
-          document: query,
-          variables: {
-            'ownerID': ownerId,
-            'sortDirection': 'DESC', // Ensure we get the most recent items first
-          },
+          document: queryDevices,
+          variables: {'ownerID': ownerId},
         ),
       ).response;
 
-      if (response.data != null) {
-        final responseData = jsonDecode(response.data!)['listDevicesByOwnerID']['items'];
-        debugPrint('Response data from _fetchDevices: $responseData');
+      if (devicesResponse.data != null) {
+        final devicesData = jsonDecode(devicesResponse.data!)['listDevicesByOwnerID']['items'];
+        debugPrint('All devices data: $devicesData');
 
-        // Group devices by their `device_id` and fetch the latest telemetry
-        final groupedDevices = <String, telemetry>{};
-        for (var deviceData in responseData) {
-          final device = telemetry.fromJson(deviceData);
-          // If device_id already exists, keep only the latest telemetry (newest timestamp)
-          if (!groupedDevices.containsKey(device.device_id) ||
-              device.timestamp.compareTo(groupedDevices[device.device_id]!.timestamp) > 0) {
-            groupedDevices[device.device_id] = device;
+        // Step 2: Fetch latest telemetry for each device
+        final List<telemetry> allDevices = [];
+        for (var device in devicesData) {
+          final deviceId = device['device_id'];
+          final telemetryQuery = '''
+            query GetLatestTelemetryForDevice($deviceId: String!, $ownerId: String!) {
+              listTelemetryByOwnerAndDevice(device_id: { eq: $deviceId }, ownerID: $ownerId, sortDirection: DESC, limit: 1) {
+                items {
+                  device_id
+                  timestamp
+                  deviceData
+                }
+              }
+            }
+          ''';
+
+          final telemetryResponse = await Amplify.API.query<String>(
+            request: GraphQLRequest<String>(
+              document: telemetryQuery,
+              variables: {'deviceId': deviceId, 'ownerID': ownerId},
+            ),
+          ).response;
+
+          if (telemetryResponse.data != null) {
+            final telemetryData =
+                jsonDecode(telemetryResponse.data!)['listTelemetryByOwnerAndDevice']['items'];
+            if (telemetryData.isNotEmpty) {
+              allDevices.add(telemetry.fromJson(telemetryData.first));
+            }
           }
         }
 
+        // Update state with all fetched devices
         setState(() {
-          devices = groupedDevices.values.toList();
+          devices = allDevices;
           debugPrint('Devices list updated in state: $devices');
         });
 
-        // Fetch shadow data only for devices without a known status
+        // Fetch shadow status for each device
         for (final device in devices) {
           if (!deviceStatuses.containsKey(device.device_id)) {
             await _fetchShadow(device.device_id);
@@ -307,29 +320,45 @@ class _DashboardState extends State<Dashboard> {
           ),
           Column(
             children: [
-            const SizedBox(height: 16),
-            if (isLoadingWeather)
-              const Center(child: CircularProgressIndicator())
-            else if (weeklyWeatherData != null && weeklyWeatherData!.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: WeatherDeviceCard(
-                  temperature: weeklyWeatherData!.last['temperature'] ?? 'N/A',
-                  windSpeed: weeklyWeatherData!.last['windSpeed'] ?? 'N/A',
-                  description: weeklyWeatherData!.last['description'] ?? 'N/A',
-                  dateTime: DateTime.parse(weeklyWeatherData!.last['date']),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => WeatherGraphScreen(
-                          weeklyData: weeklyWeatherData!,
-                        ),
-                      ),
-                    );
-                  },
+              const SizedBox(height: 16),
+              if (isLoadingWeather)
+                const Center(child: CircularProgressIndicator())
+              else if (weeklyWeatherData != null && weeklyWeatherData!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Builder(
+                    builder: (context) {
+                      // Define todayForecast here
+                      final today = DateTime.now();
+                      final todayForecast = weeklyWeatherData!.firstWhere(
+                        (data) {
+                          final forecastDate = DateTime.parse(data['date']);
+                          return forecastDate.day == today.day &&
+                              forecastDate.month == today.month &&
+                              forecastDate.year == today.year;
+                        },
+                        orElse: () => weeklyWeatherData!.first,
+                      );
+
+                      return WeatherDeviceCard(
+                        temperature: todayForecast['temperature'] ?? 'N/A',
+                        windSpeed: todayForecast['windSpeed'] ?? 'N/A',
+                        description: todayForecast['description'] ?? 'N/A',
+                        dateTime: DateTime.parse(todayForecast['date']),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => WeatherGraphScreen(
+                                weeklyData: weeklyWeatherData!,
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
-              ),
               Expanded(
                 flex: 1, // Allocate space for DeviceCards
                 child: GestureDetector(
