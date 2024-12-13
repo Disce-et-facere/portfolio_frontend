@@ -19,14 +19,14 @@ class WeatherGraphScreen extends StatelessWidget {
         .toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Stockholm Weather - Last Week')),
+      appBar: AppBar(title: const Text('Stockholm Weather - Forecast')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Last Week\'s Weather (°C)',
+              'Temperature Forecast (°C)',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
@@ -39,7 +39,7 @@ class WeatherGraphScreen extends StatelessWidget {
                       sideTitles: SideTitles(
                         showTitles: true,
                         reservedSize: 22,
-                        interval: (weeklyData.length / 6).ceil().toDouble(), // Reduce overlapping labels
+                        interval: (weeklyData.length / 6).ceil().toDouble(),
                         getTitlesWidget: (value, _) {
                           final dayIndex = value.toInt();
                           if (dayIndex < 0 || dayIndex >= weeklyData.length) {
@@ -51,7 +51,7 @@ class WeatherGraphScreen extends StatelessWidget {
                       ),
                     ),
                     leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false), // Remove Y-axis titles
+                      sideTitles: SideTitles(showTitles: false),
                     ),
                   ),
                   lineBarsData: [
@@ -61,7 +61,7 @@ class WeatherGraphScreen extends StatelessWidget {
                       barWidth: 2,
                       color: Colors.blue,
                       belowBarData: BarAreaData(show: false),
-                      dotData: FlDotData(show: true), // Show dots on the line
+                      dotData: FlDotData(show: true),
                     ),
                   ],
                   lineTouchData: LineTouchData(
@@ -72,11 +72,13 @@ class WeatherGraphScreen extends StatelessWidget {
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
                           final index = spot.x.toInt();
-                          final date = DateTime.parse(weeklyData[index]['date']);
+                          final rawDate = weeklyData[index]['date'];
+                          final date = DateTime.parse(rawDate);
                           final temperature = weeklyData[index]['temperature'];
+                          final time = DateFormat('HH:mm:ss').format(date); // Format timestamp
 
                           return LineTooltipItem(
-                            '${DateFormat('MM/dd/yyyy').format(date)}\nTemp: $temperature°C',
+                            '${DateFormat('MM/dd/yyyy').format(date)} $time\nTemp: $temperature°C',
                             const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -84,16 +86,17 @@ class WeatherGraphScreen extends StatelessWidget {
                           );
                         }).toList();
                       },
-                      getTooltipColor: (spot) => Colors.black87, // Set tooltip background color
+                      getTooltipColor: (spot) => Colors.black87,
                     ),
                     touchCallback: (FlTouchEvent event, LineTouchResponse? response) {
                       if (response != null && response.lineBarSpots != null) {
                         final touchedSpot = response.lineBarSpots!.first;
                         final index = touchedSpot.x.toInt();
-                        final date = DateTime.parse(weeklyData[index]['date']);
+                        final rawDate = weeklyData[index]['date'];
+                        final date = DateTime.parse(rawDate);
                         final temperature = weeklyData[index]['temperature'];
                         debugPrint(
-                          'Hovered over: ${DateFormat('MM/dd/yyyy').format(date)}, Temp: $temperature°C',
+                          'Hovered over: ${DateFormat('MM/dd/yyyy HH:mm:ss').format(date)}, Temp: $temperature°C',
                         );
                       }
                     },

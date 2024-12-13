@@ -317,6 +317,7 @@ class _DashboardState extends State<Dashboard> {
                   temperature: weeklyWeatherData!.last['temperature'] ?? 'N/A',
                   windSpeed: weeklyWeatherData!.last['windSpeed'] ?? 'N/A',
                   description: weeklyWeatherData!.last['description'] ?? 'N/A',
+                  dateTime: DateTime.parse(weeklyWeatherData!.last['date']),
                   onTap: () {
                     Navigator.push(
                       context,
