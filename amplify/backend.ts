@@ -9,7 +9,7 @@ import { fetchDeviceShadow } from './lambdas/fetchDeviceShadow/resource';
 import { Environment } from 'aws-cdk-lib/aws-appconfig';
 
 const AWS_REGION = secret('AWS_REGION'); // placeholders if value is not set
-const AWS_ACCOUNT_ID = secret('AWS_ACCOUNT_ID')?.toString(); // placeholders if value is not set
+const AWS_ACCOUNT_ID = secret('AWS_ACCOUNT_ID'); // placeholders if value is not set
 const TABLE_NAME = secret('DEVICE_TABLE_NAME'); // placeholders if value is not set
 
 export const backend = defineBackend({
