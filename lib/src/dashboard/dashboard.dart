@@ -5,8 +5,12 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../widgets/toolbar.dart';
 import '../widgets/device_detail_screen.dart';
+import '../widgets/weather_detail_screen.dart';
 import '../../models/telemetry.dart'; // Generated telemetry model
 import '../../models/ModelProvider.dart'; // Required for ModelQueries
+import '../models/weather_card.dart';
+import '../services/smhi_services.dart';
+
 
 class Dashboard extends StatefulWidget {
   const Dashboard({
@@ -27,6 +31,8 @@ class _DashboardState extends State<Dashboard> {
   List<telemetry> devices = [];
   Map<String, String> deviceStatuses = {};
   late ScrollController _scrollController;
+  bool isLoadingWeather = true;
+  List<Map<String, dynamic>>? weeklyWeatherData;
 
   @override
   void initState() {
@@ -34,6 +40,23 @@ class _DashboardState extends State<Dashboard> {
     _scrollController = ScrollController();
     _fetchUserEmail();
     _fetchOwnerId();
+    _fetchWeatherData();
+  }
+
+  Future<void> _fetchWeatherData() async {
+    try {
+      final smhiService = SMHIService();
+      final weatherData = await smhiService.fetchWeeklyWeatherData();
+      setState(() {
+        weeklyWeatherData = weatherData;
+        isLoadingWeather = false; // Set loading to false after data is fetched
+      });
+    } catch (e) {
+      debugPrint('Error fetching weather data: $e');
+      setState(() {
+        isLoadingWeather = false; // Stop loading even if there’s an error
+      });
+    }
   }
 
   Future<void> _fetchUserEmail() async {
@@ -227,8 +250,6 @@ class _DashboardState extends State<Dashboard> {
     }
   }
 
-
-
   Future<void> _signOut() async {
     try {
       await Amplify.Auth.signOut();
@@ -259,7 +280,6 @@ class _DashboardState extends State<Dashboard> {
       _scrollController.offset - details.delta.dx,
     );
   }
-
   
   @override
   Widget build(BuildContext context) {
@@ -270,7 +290,7 @@ class _DashboardState extends State<Dashboard> {
       Message(content: 'Firmware update available for Device 1', type: MessageType.warning),
     ];
 
-    return Scaffold(
+      return Scaffold(
       appBar: Toolbar(
         username: userEmail ?? 'Loading...',
         siteName: 'D-Monitor',
@@ -287,7 +307,28 @@ class _DashboardState extends State<Dashboard> {
           ),
           Column(
             children: [
-              const SizedBox(height: 16),
+            const SizedBox(height: 16),
+            if (isLoadingWeather)
+              const Center(child: CircularProgressIndicator())
+            else if (weeklyWeatherData != null && weeklyWeatherData!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: WeatherDeviceCard(
+                  temperature: weeklyWeatherData!.last['temperature'] ?? 'N/A',
+                  windSpeed: weeklyWeatherData!.last['windSpeed'] ?? 'N/A',
+                  description: weeklyWeatherData!.last['description'] ?? 'N/A',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => WeatherGraphScreen(
+                          weeklyData: weeklyWeatherData!,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
               Expanded(
                 flex: 1, // Allocate space for DeviceCards
                 child: GestureDetector(
@@ -346,12 +387,51 @@ class _DashboardState extends State<Dashboard> {
               ),
               const SizedBox(height: 16),
               Expanded(
-                flex: 2, // Allocate space for the MessageBoard
+                flex: 2,
                 child: MessageBoard(messages: messages),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class WeatherCard extends StatelessWidget {
+  final String temperature;
+  final String windSpeed;
+  final String description;
+
+  const WeatherCard({
+    super.key,
+    required this.temperature,
+    required this.windSpeed,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      margin: const EdgeInsets.all(16),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Stockholm Weather',
+              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            Text('Temperature: $temperature°C', style: theme.textTheme.bodyLarge),
+            Text('Wind Speed: $windSpeed m/s', style: theme.textTheme.bodyLarge),
+            Text('Condition: $description', style: theme.textTheme.bodyLarge),
+          ],
+        ),
       ),
     );
   }
