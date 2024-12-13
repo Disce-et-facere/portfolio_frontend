@@ -109,9 +109,9 @@ class _DashboardState extends State<Dashboard> {
     debugPrint('OwnerID passed to _fetchDevices: $ownerId');
 
     try {
-      // Step 1: Fetch all unique devices
+      // Step 1: Query all unique devices
       final queryDevices = '''
-        query ListUniqueDevicesByOwnerID($ownerId: String!) {
+        query ListDevicesByOwnerID($ownerId: String!) {
           listDevicesByOwnerID(ownerID: $ownerId) {
             items {
               device_id
@@ -129,15 +129,15 @@ class _DashboardState extends State<Dashboard> {
 
       if (devicesResponse.data != null) {
         final devicesData = jsonDecode(devicesResponse.data!)['listDevicesByOwnerID']['items'];
-        debugPrint('All devices data: $devicesData');
+        final uniqueDeviceIds = devicesData.map((device) => device['device_id']).toSet().toList();
+        debugPrint('Unique Device IDs: $uniqueDeviceIds');
 
-        // Step 2: Fetch latest telemetry for each device
+        // Step 2: Fetch the latest telemetry data for each device
         final List<telemetry> allDevices = [];
-        for (var device in devicesData) {
-          final deviceId = device['device_id'];
+        for (String deviceId in uniqueDeviceIds) {
           final telemetryQuery = '''
-            query GetLatestTelemetryForDevice($deviceId: String!, $ownerId: String!) {
-              listTelemetryByOwnerAndDevice(device_id: { eq: $deviceId }, ownerID: $ownerId, sortDirection: DESC, limit: 1) {
+            query GetLatestTelemetryForDevice($ownerId: String!, $deviceId: String!) {
+              listTelemetryByOwnerAndDevice(ownerID: $ownerId, device_id: $deviceId, sortDirection: DESC, limit: 1) {
                 items {
                   device_id
                   timestamp
@@ -150,7 +150,7 @@ class _DashboardState extends State<Dashboard> {
           final telemetryResponse = await Amplify.API.query<String>(
             request: GraphQLRequest<String>(
               document: telemetryQuery,
-              variables: {'deviceId': deviceId, 'ownerID': ownerId},
+              variables: {'ownerID': ownerId, 'deviceId': deviceId},
             ),
           ).response;
 
@@ -163,7 +163,7 @@ class _DashboardState extends State<Dashboard> {
           }
         }
 
-        // Update state with all fetched devices
+        // Step 3: Update the state with the fetched devices
         setState(() {
           devices = allDevices;
           debugPrint('Devices list updated in state: $devices');
