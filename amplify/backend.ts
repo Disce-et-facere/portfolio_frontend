@@ -1,4 +1,4 @@
-import { defineBackend } from '@aws-amplify/backend';
+import { defineBackend, secret} from '@aws-amplify/backend';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as iot from 'aws-cdk-lib/aws-iot';
 import { auth} from './auth/resource';
@@ -8,9 +8,9 @@ import { deleteDevice } from './lambdas/deleteDevice/resource';
 import { fetchDeviceShadow } from './lambdas/fetchDeviceShadow/resource';
 import { Environment } from 'aws-cdk-lib/aws-appconfig';
 
-const AWS_REGION = process.env.AWS_REGION; // placeholders if value is not set
-const AWS_ACCOUNT_ID = process.env.AWS_ACCOUNT_ID; // placeholders if value is not set
-const TABLE_NAME = process.env.DEVICE_TABLE_NAME; // placeholders if value is not set
+const AWS_REGION = secret('AWS_REGION'); // placeholders if value is not set
+const AWS_ACCOUNT_ID = secret('AWS_ACCOUNT_ID'); // placeholders if value is not set
+const TABLE_NAME = secret('DEVICE_TABLE_NAME'); // placeholders if value is not set
 
 export const backend = defineBackend({
   auth,
