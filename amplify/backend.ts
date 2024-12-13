@@ -9,13 +9,8 @@ import { fetchDeviceShadow } from './lambdas/fetchDeviceShadow/resource';
 import { Environment } from 'aws-cdk-lib/aws-appconfig';
 
 const AWS_REGION = process.env.AWS_REGION; // placeholders if value is not set
-const AWS_ACCOUNT_ID = process.env.AWS_ACCOUNT_ID?.toString(); // placeholders if value is not set
+const AWS_ACCOUNT_ID = process.env.AWS_ACCOUNT_ID; // placeholders if value is not set
 const TABLE_NAME = process.env.DEVICE_TABLE_NAME; // placeholders if value is not set
-
-console.log('Resolved Environment Variables:');
-console.log('AWS_REGION:', AWS_REGION);
-console.log('AWS_ACCOUNT_ID:', AWS_ACCOUNT_ID);
-console.log('TABLE_NAME:', TABLE_NAME);
 
 export const backend = defineBackend({
   auth,
@@ -40,22 +35,22 @@ const iotPolicy = new iot.CfnPolicy(createDeviceLambda, 'DevicePolicy', {
       {
         Effect: 'Allow',
         Action: 'iot:Connect',
-        Resource: 'arn:aws:iot:' + AWS_REGION + ':' + AWS_ACCOUNT_ID + ':client/${iot:ClientId}',
+        Resource: 'arn:aws:iot:' + AWS_REGION + ':' + AWS_ACCOUNT_ID?.toString() + ':client/${iot:ClientId}',
       },
       {
         Effect: 'Allow',
         Action: 'iot:Publish',
-        Resource: 'arn:aws:iot:' + AWS_REGION + ':' + AWS_ACCOUNT_ID + ':topic/${iot:ClientId}/telemetry',
+        Resource: 'arn:aws:iot:' + AWS_REGION + ':' + AWS_ACCOUNT_ID?.toString() + ':topic/${iot:ClientId}/telemetry',
       },
       {
         Effect: 'Allow',
         Action: 'iot:Subscribe',
-        Resource: 'arn:aws:iot:' + AWS_REGION + ':' + AWS_ACCOUNT_ID  + ':topicfilter/${iot:ClientId}/*',
+        Resource: 'arn:aws:iot:' + AWS_REGION + ':' + AWS_ACCOUNT_ID?.toString()  + ':topicfilter/${iot:ClientId}/*',
       },
       {
         Effect: 'Allow',
         Action: 'iot:Receive',
-        Resource: 'arn:aws:iot:' + AWS_REGION + ':' + AWS_ACCOUNT_ID + ':topic/${iot:ClientId}/*',
+        Resource: 'arn:aws:iot:' + AWS_REGION + ':' + AWS_ACCOUNT_ID?.toString() + ':topic/${iot:ClientId}/*',
       },
     ],
   },
@@ -68,13 +63,13 @@ const iotPolicyAdd = new iam.PolicyStatement({
     'iot:AttachThingPrincipal',
     'iot:UpdateThingShadow',
   ],
-  resources: ['arn:aws:iot:' + AWS_REGION + ':' + AWS_ACCOUNT_ID + ':thing/*'],
+  resources: ['arn:aws:iot:' + AWS_REGION + ':' + AWS_ACCOUNT_ID?.toString() + ':thing/*'],
 });
 
 const certPolicy = new iam.PolicyStatement({
   effect: iam.Effect.ALLOW,
   actions: ['iot:AttachThingPrincipal'],
-  resources: ['arn:aws:iot:' + AWS_REGION + ':' + AWS_ACCOUNT_ID + ':cert/*'],
+  resources: ['arn:aws:iot:' + AWS_REGION + ':' + AWS_ACCOUNT_ID?.toString() + ':cert/*'],
 });
 
 const generalIotPolicy = new iam.PolicyStatement({
@@ -93,7 +88,7 @@ const deleteDevicesLambda = backend.deleteDevice.resources.lambda;
 const dynamoDbPolicy = new iam.PolicyStatement({
   effect: iam.Effect.ALLOW,
   actions: ['dynamodb:Query', 'dynamodb:DeleteItem'],
-  resources: ['arn:aws:dynamodb:' + AWS_REGION + ':' + AWS_ACCOUNT_ID + ':' + TABLE_NAME],
+  resources: ['arn:aws:dynamodb:' + AWS_REGION + ':' + AWS_ACCOUNT_ID?.toString() + ':' + TABLE_NAME],
 });
 
 // permission for deleteDevice Lambda
@@ -118,7 +113,7 @@ const iotPolicyShadow = new iam.PolicyStatement({
   actions: [
     'iot:GetThingShadow',
   ],
-  resources: ['arn:aws:iot:' + AWS_REGION + ':' + AWS_ACCOUNT_ID + ':thing/*'],
+  resources: ['arn:aws:iot:' + AWS_REGION + ':' + AWS_ACCOUNT_ID?.toString() + ':thing/*'],
 });
 
 fetchDeviceShadowLambda.addToRolePolicy(iotPolicyShadow);
