@@ -2,7 +2,7 @@
 
 ## 📖 Overview
 
-This project is a **scalable and lightweight IoT dashboard** designed for customers to easily view and manage their devices and associated data. The dashboard displays device information, status, and collected data in a user-friendly way, enabling efficient monitoring of the IoT ecosystem.
+This project is a scalable and lightweight IoT dashboard designed for customers to easily view and manage their devices and associated data. The dashboard displays devices as cards with their name, timestamp, status, and the latest sensor reading. When a card is clicked, it opens a detailed view with all sensor readings displayed in a graphical interface. Additionally, the dashboard includes an extra function: a weather forecaster from SMHI, currently set to Stockholm.
 
 ## 🚀 Features
 
@@ -68,7 +68,7 @@ This project is a **scalable and lightweight IoT dashboard** designed for custom
 
    **Where to Find Them**:
    - `AWS_BASE_ARN`: Available in your AWS account under resource information.
-   - `DEVICE_TABLE_NAME`: Name of the DynamoDB table for storing device data.
+   - `DEVICE_TABLE_NAME`: Available in DynamoDB -> Tables.
    - `IOT_CORE_ENDPOINT`: Found in the AWS IoT Core settings.
 
 4. **Setup Message Route Rule in IoT Core**:
@@ -80,20 +80,27 @@ This project is a **scalable and lightweight IoT dashboard** designed for custom
    floor(timestamp() / 1000) AS createdAt, 
    floor(timestamp() / 1000) AS updatedAt FROM '+/telemetry'
    ```
-5. **Adjust policy ARNs due to time constraints and the need to maintain sanity**:
+   Optionally:
+   - Enable the Error Action to receive error messages from dynamoDB to your device.
    
-   Some arn need to be adjusted after your aws account arn in project file: amplify/backend.ts 
-   Ex. "Resource: 'arn:aws:iot:{your-region}:{account-id}:client/${iot:ClientId}',
+6. **Adjust variables for policy ARNs**:
+   
+   In the project folder, navigate to amplify/data/resource.ts and update the variables to match your account information and DynamoDB table details.
+```typescript
+const ACCOUNT_ID = '<your account ID>';
+const TABLE_NAME = '<your dynamoDB table name>';
+const REGION = '<your region> ';
+```
 
 7. **Redeploy the App in Amplify**:
    
-   After configuring the secrets and message route rule, redeploy the app in Amplify to apply changes.
+   After configuring the secrets, message route rule and policy ARNs, redeploy the app in Amplify to apply changes.
 
 ## 🔗 Device Code
 
-The device-side code for connecting to this dashboard is hosted in a separate repository. You can find it here:
+Your device needs to follow certain rules when it comes to topics, device shadow and message structure for the device to function with aws IoT core. Please follow the link below for more information. 
 
-[Device Code Repository](https://github.com/Disce-et-facere/Iot-Core-Mock-Devices.git)
+[Iot Core Device Example](https://github.com/Disce-et-facere/Iot-Core-Mock-Devices.git)
 
 ## 📝 Final Thoughts
 
