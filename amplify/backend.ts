@@ -1,4 +1,4 @@
-import { defineBackend, secret} from '@aws-amplify/backend';
+import { defineBackend} from '@aws-amplify/backend';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as iot from 'aws-cdk-lib/aws-iot';
 import { auth} from './auth/resource';
@@ -7,9 +7,9 @@ import { createDevice } from './lambdas/createDevice/resource';
 import { deleteDevice } from './lambdas/deleteDevice/resource';
 import { fetchDeviceShadow } from './lambdas/fetchDeviceShadow/resource';
 
-const ACCOUNT_ID = process.env.USER_ACCOUNT_ID; // placeholders if value is not set
-const REGION = process.env.AWS_REGION; // placeholders if value is not set
-const TABLE_NAME = process.env.DEVICE_TABLE_NAME; // placeholders if value is not set
+const ACCOUNT_ID = '891612540400';
+const TABLE_NAME = 'telemetry-k7armjma5bftpm3nyvu5r4c7bu-NONE';
+const REGION = 'eu-central-1';
 
 export const backend = defineBackend({
   auth,
@@ -18,7 +18,6 @@ export const backend = defineBackend({
   deleteDevice,
   fetchDeviceShadow,
 });
-
 //
 //  PERMISSIONS
 //
