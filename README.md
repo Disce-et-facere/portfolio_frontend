@@ -28,6 +28,10 @@ This project is a scalable and lightweight IoT dashboard designed for customers 
 
 ### Frontend:
 - **Flutter**: Cross-platform framework for creating a lightweight and responsive user interface.
+![Skärmbild 2024-12-14 013824](https://github.com/user-attachments/assets/025e9041-d7ae-4123-ad86-7796d381b627)
+![Skärmbild 2024-12-12 235357](https://github.com/user-attachments/assets/5e0440f9-6625-48a3-a622-c78451ec63c2)
+![Skärmbild 2024-12-12 235412](https://github.com/user-attachments/assets/2b5c306c-fb62-4691-90d4-d10633230c77)
+![Skärmbild 2024-12-14 013845](https://github.com/user-attachments/assets/0ceb8a0c-5dbb-40f0-a2d0-b52765b2f797)
 
 ## 📂 Project Structure
 
